@@ -33,9 +33,11 @@ module jtframe_simwr_68k(
     output reg         ASn
 );
 
-parameter SIMFILE="simcpu.csv";
+parameter SIMFILE="simwr.csv";
 
 integer file,rdcnt;
+
+reg [1:0] st;
 
 initial begin
     file=$fopen(SIMFILE,"r");
@@ -53,15 +55,14 @@ always @(posedge clk, posedge rst) begin
         st <= st+1;
         case( st )
             0: begin
-                rdcnt <= $fread(file,"%X,%X,%X",A,dout,dsn);
+                rdcnt <= $fscanf(file,"%X,%X,%X",A,dout,dsn);
             end
             1: begin
-                if( rdcnt == -1 ) begin
+                if( rdcnt <= 0 ) begin
                     st <= st; // Stall here
                 end else begin
                     ASn <= 0;
                     wrn <= 0;
-                    waitcnt <= WAIT;
                 end
             end
             2: begin
