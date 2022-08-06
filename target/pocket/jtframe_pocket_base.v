@@ -24,6 +24,8 @@ module jtframe_pocket_base #(parameter
     output          rst_req,
     input           clk_sys,
     input           clk_rom,
+    input           pxl2_cen,
+
     input           sdram_init,
     output          osd_shown,
     output  [6:0]   core_mod,
@@ -46,7 +48,7 @@ module jtframe_pocket_base #(parameter
     // Final video
     output  [23:0]  pck_rgb,
     output          pck_rgb_clk,
-    output          pck_rgb_clk_90,
+    output          pck_rgb_clkq,
     output          pck_de,
     output          pck_skip,
     output          pck_vs,
@@ -109,6 +111,7 @@ wire        ioctl_download, ioctl_upload;
 
 assign ioctl_ram   = 0;
 assign ioctl_cheat = 0;
+assign osd_shown   = 0;
 
 // Convert Pocket inputs to JTFRAME standard
 function [31:0] joyconv( input [15:0] joy_in );
@@ -247,7 +250,7 @@ jtframe_pocket_video u_video(
     // Final video
     .pck_rgb        ( pck_rgb       ),
     .pck_rgb_clk    ( pck_rgb_clk   ),
-    .pck_rgb_clk_90 ( pck_rgb_clk_90),
+    .pck_rgb_clkq   ( pck_rgb_clkq  ),
     .pck_de         ( pck_de        ),
     .pck_skip       ( pck_skip      ),
     .pck_vs         ( pck_vs        ),

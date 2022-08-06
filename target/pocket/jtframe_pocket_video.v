@@ -29,7 +29,7 @@ module jtframe_pocket_video(
     // Final video
     output reg [23:0] pck_rgb,
     output reg        pck_rgb_clk,
-    output reg        pck_rgb_clk_90,
+    output reg        pck_rgb_clkq,
     output reg        pck_de,
     output reg        pck_skip,
     output reg        pck_vs,
@@ -42,7 +42,7 @@ reg        hsl, vsl;
 always @(posedge clk) begin
     pxl_cnt <= pxl2_cen ? 4'd0 : pxl_cnt+4'd1;
     if( pxl_cnt[3:1] == pxl_90[3:1] )
-        pck_rgb_clk_90 <= pck_rgb_clk;
+        pck_rgb_clkq <= pck_rgb_clk;
     if(pxl2_cen) begin
         pck_rgb_clk <= ~pck_rgb_clk;
         pxl_90      <= pxl_cnt;

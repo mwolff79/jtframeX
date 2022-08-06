@@ -61,9 +61,10 @@ assign pll_locked = pll0_lock & pll1_lock & pll2_lock;
     );
 `elsif POCKET
     pll_pocket u_pllpocket( // converts 74.25 to 27MHz
-        .inclk0 ( clk_ext   ),
-        .c0     ( clk27     ),
-        .locked ( pll0_lock )
+        .rst     ( 1'b0      ),
+        .refclk  ( clk_ext   ),
+        .outclk_0( clk27     ),
+        .locked  ( pll0_lock )
     );
 `else
     assign clk27 = clk_ext;

@@ -1,6 +1,5 @@
 here:
-  - ../mist/jtframe_mist_clocks.v
-  - ../../hdl/clocking/jtframe_rst_sync.v
+  - ../mist/common.yaml
   - jtframe_pocket.v
   - jtframe_pocket_base.v
   - jtframe_pocket_top.v

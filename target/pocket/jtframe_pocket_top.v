@@ -367,8 +367,7 @@ assign port_tran_sck           = 1'bz;
 assign port_tran_sck_dir       = 0;
 assign port_tran_sd            = 1'bz;
 assign port_tran_sd_dir        = 0;
-
-
+assign video_skip              = 0;
 
 jtframe_pocket #(
     .SDRAMW       ( SDRAMW         ),
@@ -402,9 +401,8 @@ u_frame(
     // MiST VGA pins
     .pck_rgb        ( video_rgb      ),
     .pck_rgb_clk    ( video_rgb_clock),
-    .pck_rgb_clk90  ( video_rgb_clock_90 ),
+    .pck_rgb_clkq   ( video_rgb_clock_90 ),
     .pck_de         ( video_de       ),
-    .pck_skip       ( video_skip     ),
     .pck_vs         ( video_vs       ),
     .pck_hs         ( video_hs       ),
     // LED
@@ -480,7 +478,6 @@ u_frame(
     .snd_sample     ( sample         ),
     // Sound to Pcket
     .audio_mclk     ( audio_mclk     ),
-    .audio_adc      ( audio_adc      ),
     .audio_dac      ( audio_dac      ),
     .audio_lrck     ( audio_lrck     ),    // joystick
     .game_joystick1 ( game_joy1      ),
@@ -507,13 +504,6 @@ u_frame(
     .mouse_1p       ( mouse_1p       ),
     .mouse_2p       ( mouse_2p       ),
     .LED            ( LED            ),
-    // Unused in MiST
-    .BUTTON_n       ( 4'hf           ),
-    .ps2_clk        (                ),
-    .ps2_dout       (                ),
-    .joy1_bus       (                ),
-    .joy2_bus       (                ),
-    .JOY_SELECT     (                ),
     // DIP and OSD settings
     .enable_fm      ( enable_fm      ),
     .enable_psg     ( enable_psg     ),

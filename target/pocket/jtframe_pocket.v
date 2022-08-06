@@ -30,6 +30,7 @@ module jtframe_pocket #(parameter
     input               clk_rom,
     input               clk_pico,
     input               pll_locked,
+    output              rst_req,
     // interface with microcontroller
     output      [63:0]  status,
     // Base video
@@ -52,13 +53,13 @@ module jtframe_pocket #(parameter
     input               bridge_wr,
     input      [31:0]   bridge_wr_data,
     // Pocket video output
-    output     [23:0]   pocket_rgb,
-    output              pocket_rgb_clk,
-    output              pocket_rgb_clk_90,
-    output              pocket_de,
-    output              pocket_skip,
-    output              pocket_vs,
-    output              pocket_hs,
+    output     [23:0]   pck_rgb,
+    output              pck_rgb_clk,
+    output              pck_rgb_clkq,
+    output              pck_de,
+    output              pck_skip,
+    output              pck_vs,
+    output              pck_hs,
     // ROM programming
     input  [SDRAMW-1:0] prog_addr,
     input        [15:0] prog_data,
@@ -177,8 +178,6 @@ module jtframe_pocket #(parameter
     input    [7:0]  debug_view
 );
 
-wire          rst_req;
-
 // control
 wire [31:0]   joystick1, joystick2, joystick3, joystick4;
 wire [63:0]   board_status;
@@ -215,18 +214,9 @@ jtframe_pocket_base #(
     .sdram_init     ( sdram_init    ),
     .clk_sys        ( clk_sys       ),
     .clk_rom        ( clk_rom       ),
+    .pxl2_cen       ( pxl2_cen      ),
     .core_mod       ( core_mod      ),
     .osd_shown      ( osd_shown     ),
-    // Base video
-    .osd_rotate     ( rotate        ),
-    .game_r         ( game_r        ),
-    .game_g         ( game_g        ),
-    .game_b         ( game_b        ),
-    .LHBL           ( LHBL          ),
-    .LVBL           ( LVBL          ),
-    .hs             ( hs            ),
-    .vs             ( vs            ),
-    .pxl_cen        ( pxl_cen       ),
     .prog_rdy       ( prog_rdy      ),
     // Scan-doubler video
     .scan2x_r       ( scan2x_r[7:2] ),
@@ -238,7 +228,7 @@ jtframe_pocket_base #(
     // MiST VGA pins (includes OSD)
     .pck_rgb        ( pck_rgb       ),
     .pck_rgb_clk    ( pck_rgb_clk   ),
-    .pck_rgb_clk90  ( pck_rgb_clk_90),
+    .pck_rgb_clkq ( pck_rgb_clkq),
     .pck_de         ( pck_de        ),
     .pck_skip       ( pck_skip      ),
     .pck_vs         ( pck_vs        ),
@@ -274,11 +264,8 @@ jtframe_pocket_base #(
     .cont3_trig     ( cont3_trig    ),
     .cont4_trig     ( cont4_trig    ),
     // audio
-    .clk_dac        ( clk_sys       ),
     .snd_left       ( board_left    ),
     .snd_right      ( board_right   ),
-    .snd_pwm_left   ( AUDIO_L       ),
-    .snd_pwm_right  ( AUDIO_R       ),
     // ROM load from SPI
     .ioctl_addr     ( ioctl_addr    ),
     .ioctl_dout     ( ioctl_dout    ),

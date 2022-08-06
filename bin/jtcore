@@ -417,6 +417,11 @@ if [ $TARGET = mister ]; then
 else
     RBF=$PRJPATH/${TARGET}/jt$PRJ.rbf
 fi
+
+if [ $TARGET = pocket ]; then
+    quartus_cpf -c ${RBF%.rbf}.sof $RBF
+fi
+
 if [ ! -e $RBF ]; then
     echo -e "${rBG}ERROR:${NC}${wBG} file ${red}$RBF${NC}${wBG} does not exist. You need to recompile.${NC}"
     exit 1
@@ -426,7 +431,7 @@ if [ $TARGET = pocket ]; then
     # The Pocket must have something misconnected inside
     # and it requires the bit order in each RBF byte to
     # be reversed
-    reverse_bits $RBF /tmp/reverse.rbf_r
+    $JTFRAME/bin/reverse_bits $RBF /tmp/reverse.rbf_r
     cp /tmp/reverse.rbf_r $RBF
 fi
 
