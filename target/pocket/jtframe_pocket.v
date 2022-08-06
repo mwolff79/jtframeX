@@ -110,7 +110,7 @@ module jtframe_pocket #(parameter
     input  [15:0]   cont1_trig,
     input  [15:0]   cont2_trig,
     input  [15:0]   cont3_trig,
-    input  [15:0]   cont4_trig
+    input  [15:0]   cont4_trig,
     // ROM load from SPI
     output   [24:0] ioctl_addr,
     output   [ 7:0] ioctl_dout,
@@ -227,6 +227,7 @@ jtframe_pocket_base #(
     .hs             ( hs            ),
     .vs             ( vs            ),
     .pxl_cen        ( pxl_cen       ),
+    .prog_rdy       ( prog_rdy      ),
     // Scan-doubler video
     .scan2x_r       ( scan2x_r[7:2] ),
     .scan2x_g       ( scan2x_g[7:2] ),
@@ -271,7 +272,7 @@ jtframe_pocket_base #(
     .cont1_trig     ( cont1_trig    ),
     .cont2_trig     ( cont2_trig    ),
     .cont3_trig     ( cont3_trig    ),
-    .cont4_trig     ( cont4_trig    )
+    .cont4_trig     ( cont4_trig    ),
     // audio
     .clk_dac        ( clk_sys       ),
     .snd_left       ( board_left    ),

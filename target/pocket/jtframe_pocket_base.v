@@ -28,6 +28,7 @@ module jtframe_pocket_base #(parameter
     output          osd_shown,
     output  [6:0]   core_mod,
 
+    input           prog_rdy,
     // Bridge Connection
     input  [31:0]   bridge_addr,
     input           bridge_rd,
@@ -87,11 +88,11 @@ module jtframe_pocket_base #(parameter
     input  [15:0]   cont1_trig,
     input  [15:0]   cont2_trig,
     input  [15:0]   cont3_trig,
-    input  [15:0]   cont4_trig
+    input  [15:0]   cont4_trig,
 
     // ROM load from SPI
     output reg [24:0]   ioctl_addr,
-    output reg [ 7:0]   ioctl_dout,
+    output     [ 7:0]   ioctl_dout,
     input      [ 7:0]   ioctl_din,
     output reg          ioctl_wr,
     output              ioctl_ram,
@@ -134,15 +135,9 @@ wire            reset_n;                // driven by host commands, can be used 
 
 // bridge host commands
 // synchronous to clk_74a
-wire            status_boot_done = pll_core_locked;
-
-wire            dataslot_requestread;
-wire    [15:0]  dataslot_requestread_id;
-
-wire            dataslot_requestwrite;
-wire    [15:0]  dataslot_requestwrite_id;
-
-wire            dataslot_done;
+wire         status_boot_done = ~rst; // controlled by the PLL lock signals
+wire [15:0]  dataslot_requestread_id, dataslot_requestwrite_id;
+wire         dataslot_requestread, dataslot_requestwrite, dataslot_done;
 
 // bridge target commands
 // synchronous to clk_74a

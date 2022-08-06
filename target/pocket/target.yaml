@@ -1,10 +1,13 @@
 here:
+  - ../mist/jtframe_mist_clocks.v
+  - ../../hdl/clocking/jtframe_rst_sync.v
   - jtframe_pocket.v
   - jtframe_pocket_base.v
   - jtframe_pocket_top.v
   - jtframe_pocket_video.v
   - core_bridge_cmd.v
   - pocket.sdc
+  - pll_pocket.qip
   # Files from Analogue apf
   - apf/apf_top.v
   - apf/common.v

@@ -200,43 +200,175 @@ module jtframe_pocket_top(
     input     [15:0]  cont4_trig
 );
 
-// not using the IR port, so turn off both the LED, and
-// disable the receive circuit to save power
-assign port_ir_tx         = 0;
-assign port_ir_rx_disable = 1;
+`ifdef JTFRAME_SDRAM_LARGE
+    localparam SDRAMW=23; // 64 MB
+`else
+    localparam SDRAMW=22; // 32 MB
+`endif
 
-// bridge endianness
-assign bridge_endian_little = 0;
+wire          rst, rst_n, clk_sys, clk_rom, clk6, clk24, clk48, clk96;
+wire [63:0]   status;
+wire [31:0]   joystick1, joystick2;
+wire [24:0]   ioctl_addr;
+wire [ 7:0]   ioctl_dout, ioctl_din;
+wire          ioctl_wr;
+wire          ioctl_ram;
 
-// cart is unused, so set all level translators accordingly
-// directions are 0:IN, 1:OUT
-assign cart_tran_bank3         = 8'hzz;
-assign cart_tran_bank3_dir     = 1'b0;
-assign cart_tran_bank2         = 8'hzz;
-assign cart_tran_bank2_dir     = 1'b0;
-assign cart_tran_bank1         = 8'hzz;
-assign cart_tran_bank1_dir     = 1'b0;
-assign cart_tran_bank0         = 4'hf;
-assign cart_tran_bank0_dir     = 1'b1;
-assign cart_tran_pin30         = 1'b0;      // reset or cs2, we let the hw control it by itself
-assign cart_tran_pin30_dir     = 1'bz;
-assign cart_pin30_pwroff_reset = 1'b0;  // hardware can control this
-assign cart_tran_pin31         = 1'bz;      // input
-assign cart_tran_pin31_dir     = 1'b0;  // input
+wire [15:0] joyana_l1, joyana_l2, joyana_l3, joyana_l4,
+            joyana_r1, joyana_r2, joyana_r3, joyana_r4;
 
-// link port is input only
-assign port_tran_so      = 1'bz;
-assign port_tran_so_dir  = 1'b0;     // SO is output only
-assign port_tran_si      = 1'bz;
-assign port_tran_si_dir  = 1'b0;     // SI is input only
-assign port_tran_sck     = 1'bz;
-assign port_tran_sck_dir = 1'b0;    // clock direction can change
-assign port_tran_sd      = 1'bz;
-assign port_tran_sd_dir  = 1'b0;     // SD is input and not used
+// ROM download
+wire          downloading, dwnld_busy;
 
-assign dram_clk = clk_rom;
+wire [SDRAMW-1:0] prog_addr;
+wire [15:0]   prog_data;
+`ifndef JTFRAME_SDRAM_BANKS
+wire [ 7:0]   prog_data8;
+`endif
+wire [ 1:0]   prog_mask, prog_ba;
+wire          prog_we, prog_rd, prog_rdy, prog_ack, prog_dst, prog_dok;
+
+// ROM access from game
+wire [SDRAMW-1:0] ba0_addr, ba1_addr, ba2_addr, ba3_addr;
+wire [ 3:0] ba_rd, ba_rdy, ba_ack, ba_dst, ba_dok;
+wire        ba_wr;
+wire [15:0] ba0_din;
+wire [ 1:0] ba0_din_m;
+wire [15:0] sdram_dout;
+
+`ifndef JTFRAME_COLORW
+`define JTFRAME_COLORW 4
+`endif
+
+localparam COLORW=`JTFRAME_COLORW;
+
+wire [COLORW-1:0] red;
+wire [COLORW-1:0] green;
+wire [COLORW-1:0] blue;
+
+wire LHBL, LVBL, hs, vs;
+wire [15:0] snd_left, snd_right;
+wire        sample;
+
+wire [9:0] game_joy1, game_joy2, game_joy3, game_joy4;
+wire [3:0] game_coin, game_start;
+wire       game_rst, game_service;
+wire       rst96, rst48, rst24, rst6;
+wire [3:0] gfx_en;
+// SDRAM
+wire data_rdy, sdram_ack;
+
+// PLL's
+wire pll_locked, clk_pico;
+
+
+`ifndef JTFRAME_STEREO
+assign snd_right = snd_left;
+`endif
+
+`ifndef JTFRAME_SDRAM_BANKS
+    assign prog_data = {2{prog_data8}};
+    assign ba_rd[3:1] = 0;
+    assign ba_wr      = 0;
+    assign prog_ba    = 0;
+    // tie down unused bank signals
+    assign ba1_addr   = 0;
+    assign ba2_addr   = 0;
+    assign ba3_addr   = 0;
+    assign ba0_din    = 0;
+    assign ba0_din_m  = 3;
+`endif
+
+jtframe_mist_clocks u_clocks(
+    .clk_ext    ( clk_74b        ), // 74.25 MHz
+
+    // PLL outputs
+    .clk96      ( clk96          ),
+    .clk48      ( clk48          ),
+    .clk24      ( clk24          ),
+    .clk6       ( clk6           ),
+    .pll_locked ( pll_locked     ),
+
+    // System clocks
+    .clk_sys    ( clk_sys        ),
+    .clk_rom    ( clk_rom        ),
+    .SDRAM_CLK  ( dram_clk      ),
+
+    // reset signals
+    .game_rst   ( game_rst       ),
+    .rst96      ( rst96          ),
+    .rst48      ( rst48          ),
+    .rst24      ( rst24          ),
+    .rst6       ( rst6           )
+);
+
+assign clk_pico = clk48;
+
+wire [ 7:0] debug_bus, debug_view;
+wire [ 1:0] dip_fxlevel, game_led;
+wire        enable_fm, enable_psg;
+wire        dip_pause, dip_flip, dip_test;
+wire        pxl_cen, pxl2_cen;
+wire [ 7:0] st_addr, st_dout;
+wire [ 7:0] paddle_0, paddle_1, paddle_2, paddle_3;
+wire [15:0] mouse_1p, mouse_2p;
+
+`ifdef SIMULATION
+assign sim_pxl_clk    = clk_sys;
+assign sim_pxl_cen    = pxl_cen;
+assign sim_vb         = ~LVBL;
+assign sim_hb         = ~LHBL;
+assign sim_dwnld_busy = dwnld_busy;
+`endif
+
+`ifndef JTFRAME_SIGNED_SND
+`define JTFRAME_SIGNED_SND 1'b1
+`endif
+
+`ifndef JTFRAME_BUTTONS
+`define JTFRAME_BUTTONS 2
+`endif
+
+`ifdef JTFRAME_MIST_DIPBASE
+localparam DIPBASE=`JTFRAME_MIST_DIPBASE;
+`else
+localparam DIPBASE=16;
+`endif
+
+assign game_led[1] = 1'b0; // Let system LED info go through too
 
 localparam GAME_BUTTONS=`JTFRAME_BUTTONS;
+
+
+// bridge endianness
+assign bridge_endian_little = 1;
+
+// Unused Pocket ports
+assign port_ir_tx         = 0;
+assign port_ir_rx_disable = 1;
+assign cart_tran_bank3         = 8'hzz;
+assign cart_tran_bank3_dir     = 0;
+assign cart_tran_bank2         = 8'hzz;
+assign cart_tran_bank2_dir     = 0;
+assign cart_tran_bank1         = 8'hzz;
+assign cart_tran_bank1_dir     = 0;
+assign cart_tran_bank0         = 4'hf;
+assign cart_tran_bank0_dir     = 1;
+assign cart_tran_pin30         = 0;
+assign cart_tran_pin30_dir     = 1'bz;
+assign cart_pin30_pwroff_reset = 0;
+assign cart_tran_pin31         = 1'bz;
+assign cart_tran_pin31_dir     = 0;
+assign port_tran_so            = 1'bz;
+assign port_tran_so_dir        = 0;
+assign port_tran_si            = 1'bz;
+assign port_tran_si_dir        = 0;
+assign port_tran_sck           = 1'bz;
+assign port_tran_sck_dir       = 0;
+assign port_tran_sd            = 1'bz;
+assign port_tran_sd_dir        = 0;
+
+
 
 jtframe_pocket #(
     .SDRAMW       ( SDRAMW         ),
@@ -397,6 +529,25 @@ u_frame(
     .debug_bus      ( debug_bus      ),
     .debug_view     ( debug_view     )
 );
+
+`ifdef JTFRAME_4PLAYERS
+localparam STARTW=4;
+`else
+localparam STARTW=2;
+`endif
+
+// For simulation, either ~32'd0 or `JTFRAME_SIM_DIPS will be used for DIPs
+`ifdef SIMULATION
+`ifndef JTFRAME_SIM_DIPS
+    `define JTFRAME_SIM_DIPS ~32'd0
+`endif
+`endif
+
+`ifdef JTFRAME_SIM_DIPS
+    wire [31:0] dipsw = `JTFRAME_SIM_DIPS;
+`else
+    wire [31:0] dipsw = status[31+DIPBASE:DIPBASE];
+`endif
 
 `GAMETOP
 u_game(

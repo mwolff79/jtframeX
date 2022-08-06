@@ -167,10 +167,7 @@ always @(posedge clk) begin
     if(status_setup_done & ~status_setup_done_1) begin
         status_setup_done_queue <= 1;
     end
-    
-    b_datatable_wren <= 0;
-    b_datatable_addr <= bridge_addr >> 2;
-        
+
     if(bridge_wr) begin
         casex(bridge_addr)
         32'hF8xx00xx: begin
@@ -201,9 +198,6 @@ always @(posedge clk) begin
             8'h4C: target_4C <= bridge_wr_data_in;
             endcase
         end
-        32'hF8xx2xxx: begin
-            b_datatable_wren <= 1;
-        end
         endcase
     end 
     if(bridge_rd) begin
@@ -229,10 +223,6 @@ always @(posedge clk) begin
             8'h28: bridge_rd_data_out <= target_28;
             8'h2C: bridge_rd_data_out <= target_2C;
             endcase
-        end
-        32'hF8xx2xxx: begin
-            bridge_rd_data_out <= b_datatable_q;
-        
         end
         endcase
     end

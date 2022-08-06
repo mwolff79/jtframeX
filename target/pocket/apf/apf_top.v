@@ -35,8 +35,6 @@
 // 
 // 2022-06-28 Analogue
 
-`default_nettype none
-
 module apf_top (
 ///////////////////////////////////////////////////
 // clock inputs 74.25mhz. not phase aligned, so treat these domains as asynchronous
