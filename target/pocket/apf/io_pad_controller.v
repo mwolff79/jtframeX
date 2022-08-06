@@ -57,6 +57,31 @@ output  reg     [15:0]  cont4_trig,
 output  reg             rx_timed_out
 );
 
+reg         reset_tr_n;
+localparam  BITLEN = 60;
+
+reg         rx_word_done;
+reg [31:0]  rx_word_shift;
+reg [31:0]  rx_word;
+
+reg         tx_word_start, tx_word_start_1;
+reg         tx_word_done;
+reg [31:0]  tx_word;
+reg [31:0]  tx_word_shift;
+
+reg [7:0]   tr_cnt;
+reg [5:0]   tr_bit;
+
+localparam  TR_IDLE         = 'd1;
+localparam  TR_TX_START     = 'd2;
+localparam  TR_TX_CONTINUE  = 'd3;
+localparam  TR_TX_DONE      = 'd4;
+localparam  TR_RX_START     = 'd5;
+localparam  TR_RX_WAITEDGE  = 'd6;
+localparam  TR_RX_DONE      = 'd7;
+
+reg [3:0]   tr_state;
+
     wire        reset_n_s;
 synch_3 s00(reset_n, reset_n_s, clk);
 
@@ -68,25 +93,25 @@ synch_3 s01(pad_1wire, pad_1wire_s, clk, pad_1wire_r, pad_1wire_f);
 // protocol fsm
 //
 
-    reg [20:0]  rx_timeout; // ~28ms
-    
-    reg [15:0]  auto_poll_cnt; // 882us
-    reg         auto_poll_queue;
-    
-    reg [18:0]  heartbeat_cnt; // 7ms
-    reg         heartbeat_queue;
-    
+reg [20:0]  rx_timeout; // ~28ms
 
-    localparam  ST_RESET        = 'd0;
-    localparam  ST_IDLE         = 'd1;
-    localparam  ST_RX_BUTTON_1  = 'd2;
-    localparam  ST_RX_BUTTON_2  = 'd3;
-    localparam  ST_TX_SCALER    = 'd4;
-    localparam  ST_END_TX       = 'd5;
-    
-    reg [3:0]   state;
-    reg [3:0]   cnt;
-    
+reg [15:0]  auto_poll_cnt; // 882us
+reg         auto_poll_queue;
+
+reg [18:0]  heartbeat_cnt; // 7ms
+reg         heartbeat_queue;
+
+
+localparam  ST_RESET        = 'd0;
+localparam  ST_IDLE         = 'd1;
+localparam  ST_RX_BUTTON_1  = 'd2;
+localparam  ST_RX_BUTTON_2  = 'd3;
+localparam  ST_TX_SCALER    = 'd4;
+localparam  ST_END_TX       = 'd5;
+
+reg [3:0]   state;
+reg [3:0]   cnt;
+
 always @(posedge clk) begin
     tx_word_start <= 0;
     
@@ -136,22 +161,22 @@ always @(posedge clk) begin
         if(rx_word_done) begin
             cnt <= cnt + 1'b1;
             case(cnt)
-            0: cont1_key <= rx_word;
-            1: cont1_joy <= rx_word;
-            2: cont1_trig <= rx_word;
+            0: cont1_key  <= rx_word[15:0];
+            1: cont1_joy  <= rx_word;
+            2: cont1_trig <= rx_word[15:0];
+
+            3: cont2_key  <= rx_word[15:0];
+            4: cont2_joy  <= rx_word;
+            5: cont2_trig <= rx_word[15:0];
+
+            6: cont3_key  <= rx_word[15:0];
+            7: cont3_joy  <= rx_word;
+            8: cont3_trig <= rx_word[15:0];
             
-            3: cont2_key <= rx_word;
-            4: cont2_joy <= rx_word;
-            5: cont2_trig <= rx_word;
-            
-            6: cont3_key <= rx_word;
-            7: cont3_joy <= rx_word;
-            8: cont3_trig <= rx_word;
-            
-            9: cont4_key <= rx_word;
+            9: cont4_key  <= rx_word[15:0];
             10: cont4_joy <= rx_word;
             11: begin
-                cont4_trig <= rx_word;
+                cont4_trig <= rx_word[15:0];
                 state <= ST_IDLE;   
             end
             endcase
@@ -193,30 +218,6 @@ end
 //
 // word receive/transmit engine
 //
-    reg         reset_tr_n;
-    localparam  BITLEN = 60;
-    
-    reg         rx_word_done;
-    reg [31:0]  rx_word_shift;
-    reg [31:0]  rx_word;
-    
-    reg         tx_word_start, tx_word_start_1;
-    reg         tx_word_done;
-    reg [31:0]  tx_word;
-    reg [31:0]  tx_word_shift;
-    
-    reg [7:0]   tr_cnt;
-    reg [5:0]   tr_bit;
-    
-    localparam  TR_IDLE         = 'd1;
-    localparam  TR_TX_START     = 'd2;
-    localparam  TR_TX_CONTINUE  = 'd3;
-    localparam  TR_TX_DONE      = 'd4;
-    localparam  TR_RX_START     = 'd5;
-    localparam  TR_RX_WAITEDGE  = 'd6;
-    localparam  TR_RX_DONE      = 'd7;
-    
-    reg [3:0]   tr_state;
 
 always @(posedge clk) begin
 

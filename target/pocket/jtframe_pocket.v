@@ -29,6 +29,7 @@ module jtframe_pocket #(parameter
     input               clk_sys,
     input               clk_rom,
     input               clk_pico,
+    input               clk_74a,
     input               pll_locked,
     output              rst_req,
     // interface with microcontroller
@@ -85,9 +86,6 @@ module jtframe_pocket #(parameter
     input        [15:0] ba0_din,
     input        [ 1:0] ba0_din_m,  // write mask
     output       [15:0] sdram_dout,
-    // UART
-    input           uart_rx,
-    output          uart_tx,
     // SDRAM interface
     inout    [15:0] SDRAM_DQ,       // SDRAM Data bus 16 Bits
     output   [12:0] SDRAM_A,        // SDRAM Address bus 13 Bits
@@ -100,18 +98,18 @@ module jtframe_pocket #(parameter
     output    [1:0] SDRAM_BA,       // SDRAM Bank Address
     output          SDRAM_CKE,      // SDRAM Clock Enable
     // Pocket inputs
-    input  [15:0]   cont1_key,
-    input  [15:0]   cont2_key,
-    input  [15:0]   cont3_key,
-    input  [15:0]   cont4_key,
-    input  [31:0]   cont1_joy,
-    input  [31:0]   cont2_joy,
-    input  [31:0]   cont3_joy,
-    input  [31:0]   cont4_joy,
-    input  [15:0]   cont1_trig,
-    input  [15:0]   cont2_trig,
-    input  [15:0]   cont3_trig,
-    input  [15:0]   cont4_trig,
+    input    [15:0] cont1_key,
+    input    [15:0] cont2_key,
+    input    [15:0] cont3_key,
+    input    [15:0] cont4_key,
+    input    [31:0] cont1_joy,
+    input    [31:0] cont2_joy,
+    input    [31:0] cont3_joy,
+    input    [31:0] cont4_joy,
+    input    [15:0] cont1_trig,
+    input    [15:0] cont2_trig,
+    input    [15:0] cont3_trig,
+    input    [15:0] cont4_trig,
     // ROM load from SPI
     output   [24:0] ioctl_addr,
     output   [ 7:0] ioctl_dout,
@@ -170,7 +168,6 @@ module jtframe_pocket #(parameter
     inout           dip_flip,     // A change in dip_flip implies a reset
     output  [ 1:0]  dip_fxlevel,
     // Debug
-    output          LED,
     output   [ 7:0] st_addr,
     input    [ 7:0] st_dout,
     output   [3:0]  gfx_en,
@@ -198,7 +195,6 @@ wire  [ 8:0]  bd_mouse_dx, bd_mouse_dy;
 wire          bd_mouse_st, bd_mouse_idx;
 wire  [ 7:0]  bd_mouse_f;
 
-
 assign bridge_endian_little = 0;
 assign board_status = { {64-DIPBASE{1'b0}}, status[DIPBASE-1:0] };
 assign paddle_1 = 0;
@@ -214,6 +210,7 @@ jtframe_pocket_base #(
     .sdram_init     ( sdram_init    ),
     .clk_sys        ( clk_sys       ),
     .clk_rom        ( clk_rom       ),
+    .clk_74a        ( clk_74a       ),
     .pxl2_cen       ( pxl2_cen      ),
     .core_mod       ( core_mod      ),
     .osd_shown      ( osd_shown     ),
@@ -348,24 +345,24 @@ jtframe_board #(
     // LED
     .osd_shown      ( osd_shown       ),
     .game_led       ( game_led        ),
-    .led            ( LED             ),
+    .led            (                 ),
     // UART
-    .uart_rx        ( uart_rx         ),
-    .uart_tx        ( uart_tx         ),
+    .uart_rx        ( 1'b0            ),
+    .uart_tx        (                 ),
     // SDRAM interface
     // Bank 0: allows R/W
-    .ba0_addr   ( ba0_addr      ),
-    .ba1_addr   ( ba1_addr      ),
-    .ba2_addr   ( ba2_addr      ),
-    .ba3_addr   ( ba3_addr      ),
-    .ba_rd      ( ba_rd         ),
-    .ba_wr      ( ba_wr         ),
-    .ba_dst     ( ba_dst        ),
-    .ba_dok     ( ba_dok        ),
-    .ba_rdy     ( ba_rdy        ),
-    .ba_ack     ( ba_ack        ),
-    .ba0_din    ( ba0_din       ),
-    .ba0_din_m  ( ba0_din_m     ),  // write mask
+    .ba0_addr       ( ba0_addr        ),
+    .ba1_addr       ( ba1_addr        ),
+    .ba2_addr       ( ba2_addr        ),
+    .ba3_addr       ( ba3_addr        ),
+    .ba_rd          ( ba_rd           ),
+    .ba_wr          ( ba_wr           ),
+    .ba_dst         ( ba_dst          ),
+    .ba_dok         ( ba_dok          ),
+    .ba_rdy         ( ba_rdy          ),
+    .ba_ack         ( ba_ack          ),
+    .ba0_din        ( ba0_din         ),
+    .ba0_din_m      ( ba0_din_m       ),  // write mask
 
     // ROM-load interface
     .prog_addr  ( prog_addr     ),

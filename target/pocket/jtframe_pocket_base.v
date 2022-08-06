@@ -24,11 +24,12 @@ module jtframe_pocket_base #(parameter
     output          rst_req,
     input           clk_sys,
     input           clk_rom,
+    input           clk_74a,
     input           pxl2_cen,
 
     input           sdram_init,
     output          osd_shown,
-    output  [6:0]   core_mod,
+    output reg [6:0] core_mod,
 
     input           prog_rdy,
     // Bridge Connection
@@ -131,10 +132,7 @@ assign { joyana_r4, joyana_l4 } = cont4_joy;
 assign but_coin  = { cont4_key[14], cont3_key[14], cont2_key[14], cont1_key[14] };
 assign but_start = { cont4_key[15], cont3_key[15], cont2_key[15], cont1_key[15] };
 
-//
-// host/target command handler
-//
-wire            reset_n;                // driven by host commands, can be used as core-wide reset
+wire         rst_req_n;
 
 // bridge host commands
 // synchronous to clk_74a
@@ -142,12 +140,7 @@ wire         status_boot_done = ~rst; // controlled by the PLL lock signals
 wire [15:0]  dataslot_requestread_id, dataslot_requestwrite_id;
 wire         dataslot_requestread, dataslot_requestwrite, dataslot_done;
 
-// bridge target commands
-// synchronous to clk_74a
-
-
 // bridge data slot access
-
 wire    [9:0]   datatable_addr;
 wire            datatable_wren;
 wire    [31:0]  datatable_data;
@@ -163,6 +156,14 @@ reg  [31:0] ioctl_qword;
 reg         prog_rdyl;
 
 assign ioctl_dout = ioctl_qword[7:0];
+
+always @(posedge clk_rom, posedge rst) begin
+    if( rst ) begin
+        core_mod <= 0;
+    end else if( ioctl_wr && ioctl_index==1 )
+        core_mod <= ioctl_dout[6:0];
+    end
+end
 
 jtframe_sync #( .W(1+16+32) )
 u_sync(

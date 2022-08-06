@@ -368,6 +368,23 @@ assign port_tran_sck_dir       = 0;
 assign port_tran_sd            = 1'bz;
 assign port_tran_sd_dir        = 0;
 assign video_skip              = 0;
+assign sram_a                  = 0;
+assign sram_dq                 = 0;
+assign sram_oe_n               = 1;
+assign sram_we_n               = 1;
+assign sram_ub_n               = 1;
+assign sram_lb_n               = 1;
+assign cram1_a                 = 0;
+assign cram1_dq                = 0;
+assign cram1_clk               = 0;
+assign cram1_adv_n             = 1;
+assign cram1_cre               = 0;
+assign cram1_ce0_n             = 1;
+assign cram1_ce1_n             = 1;
+assign cram1_oe_n              = 1;
+assign cram1_we_n              = 1;
+assign cram1_ub_n              = 1;
+assign cram1_lb_n              = 1;
 
 jtframe_pocket #(
     .SDRAMW       ( SDRAMW         ),
@@ -407,14 +424,6 @@ u_frame(
     .pck_hs         ( video_hs       ),
     // LED
     .game_led       ( game_led       ),
-    // UART
-`ifndef JTFRAME_UART
-    .uart_rx        ( UART_RX        ),
-    .uart_tx        ( UART_TX        ),
-`else
-    .uart_rx        ( 1'b1           ),
-    .uart_tx        (                ),
-`endif
     // SDRAM interface
     .SDRAM_DQ       ( dram_dq        ),
     .SDRAM_A        ( dram_a         ),
@@ -672,8 +681,8 @@ u_game(
     .dipsw       ( dipsw          ),
 
 `ifdef JTFRAME_GAME_UART
-    .uart_tx     ( UART_TX        ),
-    .uart_rx     ( UART_RX        ),
+    .uart_tx     (                ),
+    .uart_rx     ( 1'b0           ),
 `endif
 
     // sound

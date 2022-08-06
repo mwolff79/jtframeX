@@ -391,6 +391,7 @@ case $TARGET in
     neptuno) EXT=np1;;
     mc2) EXT=mc2;;
     mcp) EXT=mcp;;
+    pocket) EXT=rbf_r;;
     *) EXT=rbf;;
 esac
 

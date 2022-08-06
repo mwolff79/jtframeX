@@ -78,22 +78,22 @@ module jtframe_board #(parameter
     output              prog_ack,
     input               downloading,
     // SDRAM interface
-    inout  [15:0]     SDRAM_DQ,       // SDRAM Data bus 16 Bits
-    output [12:0]     SDRAM_A,        // SDRAM Address bus 13 Bits
-    output            SDRAM_DQML,     // SDRAM Low-byte Data Mask
-    output            SDRAM_DQMH,     // SDRAM High-byte Data Mask
-    output            SDRAM_nWE,      // SDRAM Write Enable
-    output            SDRAM_nCAS,     // SDRAM Column Address Strobe
-    output            SDRAM_nRAS,     // SDRAM Row Address Strobe
-    output            SDRAM_nCS,      // SDRAM Chip Select
-    output [1:0]      SDRAM_BA,       // SDRAM Bank Address
-    output            SDRAM_CKE,      // SDRAM Clock Enable
+    inout    [15:0]     SDRAM_DQ,       // SDRAM Data bus 16 Bits
+    output   [12:0]     SDRAM_A,        // SDRAM Address bus 13 Bits
+    output              SDRAM_DQML,     // SDRAM Low-byte Data Mask
+    output              SDRAM_DQMH,     // SDRAM High-byte Data Mask
+    output              SDRAM_nWE,      // SDRAM Write Enable
+    output              SDRAM_nCAS,     // SDRAM Column Address Strobe
+    output              SDRAM_nRAS,     // SDRAM Row Address Strobe
+    output              SDRAM_nCS,      // SDRAM Chip Select
+    output   [1:0]      SDRAM_BA,       // SDRAM Bank Address
+    output              SDRAM_CKE,      // SDRAM Clock Enable
     // keyboard
-    input             ps2_kbd_clk,
-    input             ps2_kbd_data,
+    input               ps2_kbd_clk,
+    input               ps2_kbd_data,
     // UART
-    input             uart_rx,
-    output            uart_tx,
+    input               uart_rx,
+    output              uart_tx,
     // joystick
     input     [15:0]  board_joystick1,
     input     [15:0]  board_joystick2,

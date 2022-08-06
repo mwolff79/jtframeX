@@ -64,10 +64,10 @@ input   wire            savestate_load_err
 );
 
 // handle endianness
-    reg     [31:0]  bridge_wr_data_in;
-    reg     [31:0]  bridge_rd_data_out;
-    
-    wire endian_little_s = 1'b1;
+reg     [31:0]  bridge_wr_data_in;
+reg     [31:0]  bridge_rd_data_out;
+
+wire endian_little_s = 1;
 
 always @(*) begin
     bridge_rd_data <= endian_little_s ? {
