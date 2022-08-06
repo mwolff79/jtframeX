@@ -234,6 +234,8 @@ assign port_tran_sck_dir = 1'b0;    // clock direction can change
 assign port_tran_sd      = 1'bz;
 assign port_tran_sd_dir  = 1'b0;     // SD is input and not used
 
+assign dram_clk = clk_rom;
+
 localparam GAME_BUTTONS=`JTFRAME_BUTTONS;
 
 jtframe_pocket #(
@@ -284,51 +286,43 @@ u_frame(
     .uart_tx        (                ),
 `endif
     // SDRAM interface
-    .SDRAM_DQ       ( SDRAM_DQ       ),
-    .SDRAM_A        ( SDRAM_A        ),
-    .SDRAM_DQML     ( SDRAM_DQML     ),
-    .SDRAM_DQMH     ( SDRAM_DQMH     ),
-    .SDRAM_nWE      ( SDRAM_nWE      ),
-    .SDRAM_nCAS     ( SDRAM_nCAS     ),
-    .SDRAM_nRAS     ( SDRAM_nRAS     ),
-    .SDRAM_nCS      ( SDRAM_nCS      ),
-    .SDRAM_BA       ( SDRAM_BA       ),
-    .SDRAM_CKE      ( SDRAM_CKE      ),
-    // SPI interface to arm io controller
-    .SPI_DO         ( SPI_DO         ),
-    .SPI_DI         ( SPI_DI         ),
-    .SPI_SCK        ( SPI_SCK        ),
-    .SPI_SS2        ( SPI_SS2        ),
-    .SPI_SS3        ( SPI_SS3        ),
-    .SPI_SS4        ( SPI_SS4        ),
-    .CONF_DATA0     ( CONF_DATA0     ),
+    .SDRAM_DQ       ( dram_dq        ),
+    .SDRAM_A        ( dram_a         ),
+    .SDRAM_DQML     ( dram_dqm[0]    ),
+    .SDRAM_DQMH     ( dram_dqm[1]    ),
+    .SDRAM_nWE      ( dram_we_n      ),
+    .SDRAM_nCAS     ( dram_cas_n     ),
+    .SDRAM_nRAS     ( dram_ras_n     ),
+    .SDRAM_nCS      (                ),
+    .SDRAM_BA       ( dram_ba        ),
+    .SDRAM_CKE      ( dram_cke       ),
 
     // ROM access from game
     // Bank 0: allows R/W
-    .ba0_addr   ( ba0_addr      ),
-    .ba1_addr   ( ba1_addr      ),
-    .ba2_addr   ( ba2_addr      ),
-    .ba3_addr   ( ba3_addr      ),
-    .ba_rd      ( ba_rd         ),
-    .ba_wr      ({ 3'd0, ba_wr }),
-    .ba_dst     ( ba_dst        ),
-    .ba_dok     ( ba_dok        ),
-    .ba_rdy     ( ba_rdy        ),
-    .ba_ack     ( ba_ack        ),
-    .ba0_din    ( ba0_din       ),
-    .ba0_din_m  ( ba0_din_m     ),  // write mask
+    .ba0_addr       ( ba0_addr       ),
+    .ba1_addr       ( ba1_addr       ),
+    .ba2_addr       ( ba2_addr       ),
+    .ba3_addr       ( ba3_addr       ),
+    .ba_rd          ( ba_rd          ),
+    .ba_wr          ({ 3'd0, ba_wr } ),
+    .ba_dst         ( ba_dst         ),
+    .ba_dok         ( ba_dok         ),
+    .ba_rdy         ( ba_rdy         ),
+    .ba_ack         ( ba_ack         ),
+    .ba0_din        ( ba0_din        ),
+    .ba0_din_m      ( ba0_din_m      ),  // write mask
 
     // ROM-load interface
-    .prog_addr  ( prog_addr     ),
-    .prog_ba    ( prog_ba       ),
-    .prog_rd    ( prog_rd       ),
-    .prog_we    ( prog_we       ),
-    .prog_data  ( prog_data     ),
-    .prog_mask  ( prog_mask     ),
-    .prog_ack   ( prog_ack      ),
-    .prog_dst   ( prog_dst      ),
-    .prog_dok   ( prog_dok      ),
-    .prog_rdy   ( prog_rdy      ),
+    .prog_addr      ( prog_addr      ),
+    .prog_ba        ( prog_ba        ),
+    .prog_rd        ( prog_rd        ),
+    .prog_we        ( prog_we        ),
+    .prog_data      ( prog_data      ),
+    .prog_mask      ( prog_mask      ),
+    .prog_ack       ( prog_ack       ),
+    .prog_dst       ( prog_dst       ),
+    .prog_dok       ( prog_dok       ),
+    .prog_rdy       ( prog_rdy       ),
 
     // ROM load
     .ioctl_addr     ( ioctl_addr     ),

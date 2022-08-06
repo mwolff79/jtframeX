@@ -51,7 +51,7 @@ always @(posedge clk) begin
             vsl     <= scan2x_vs;
             pck_hs  <= scan2x_hs & ~hsl;
             pck_vs  <= scan2x_vs & ~vsl;
-            pck_de  <= scan2x_de;
+            pck_de  <= !scan2x_vs && !scan2x_hs; //scan2x_de;
             pck_rgb <= { scan2x_r, scan2x_g, scan2x_b };
         end
     end
