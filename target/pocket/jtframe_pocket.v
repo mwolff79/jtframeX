@@ -26,30 +26,39 @@ module jtframe_pocket #(parameter
     VIDEO_HEIGHT           = 224,
     SDRAMW                 = 23
 )(
-    input           clk_sys,
-    input           clk_rom,
-    input           clk_pico,
-    input           pll_locked,
+    input               clk_sys,
+    input               clk_rom,
+    input               clk_pico,
+    input               pll_locked,
     // interface with microcontroller
-    output  [63:0]  status,
+    output      [63:0]  status,
     // Base video
-    input [COLORW-1:0] game_r,
-    input [COLORW-1:0] game_g,
-    input [COLORW-1:0] game_b,
-    input              LHBL,
-    input              LVBL,
-    input              hs,
-    input              vs,
-    input              pxl_cen,
-    input              pxl2_cen,
+    input  [COLORW-1:0] game_r,
+    input  [COLORW-1:0] game_g,
+    input  [COLORW-1:0] game_b,
+    input               LHBL,
+    input               LVBL,
+    input               hs,
+    input               vs,
+    input               pxl_cen,
+    input               pxl2_cen,
     // LED
-    input        [1:0] game_led,
-    // MiST VGA pins
-    output       [5:0] VGA_R,
-    output       [5:0] VGA_G,
-    output       [5:0] VGA_B,
-    output             VGA_HS,
-    output             VGA_VS,
+    input         [1:0] game_led,
+    // Bridge Connection
+    output              bridge_endian_little,
+    input      [31:0]   bridge_addr,
+    input               bridge_rd,
+    output     [31:0]   bridge_rd_data,
+    input               bridge_wr,
+    input      [31:0]   bridge_wr_data,
+    // Pocket video output
+    output     [23:0]   pocket_rgb,
+    output              pocket_rgb_clk,
+    output              pocket_rgb_clk_90,
+    output              pocket_de,
+    output              pocket_skip,
+    output              pocket_vs,
+    output              pocket_hs,
     // ROM programming
     input  [SDRAMW-1:0] prog_addr,
     input        [15:0] prog_data,
@@ -89,14 +98,6 @@ module jtframe_pocket #(parameter
     output          SDRAM_nCS,      // SDRAM Chip Select
     output    [1:0] SDRAM_BA,       // SDRAM Bank Address
     output          SDRAM_CKE,      // SDRAM Clock Enable
-    // SPI interface to arm io controller
-    inout           SPI_DO,
-    input           SPI_DI,
-    input           SPI_SCK,
-    input           SPI_SS2,
-    input           SPI_SS3,
-    input           SPI_SS4,
-    input           CONF_DATA0,
     // Pocket inputs
     input  [15:0]   cont1_key,
     input  [15:0]   cont2_key,
@@ -124,14 +125,14 @@ module jtframe_pocket #(parameter
     output          rst_n,    // asynchronous reset
     output          game_rst,
     output          game_rst_n,
-    // reset forcing signals:
-    input           rst_req,
     // Sound
     input   [15:0]  snd_left,
     input   [15:0]  snd_right,
     input           snd_sample,
-    output          AUDIO_L,
-    output          AUDIO_R,
+
+    input           audio_mclk,
+    output          audio_dac,
+    output          audio_lrck,
     // joystick
     output   [9:0]  game_joystick1,
     output   [9:0]  game_joystick2,
@@ -176,19 +177,20 @@ module jtframe_pocket #(parameter
     input    [7:0]  debug_view
 );
 
+wire          rst_req;
+
 // control
 wire [31:0]   joystick1, joystick2, joystick3, joystick4;
-wire [63:0] board_status;
+wire [63:0]   board_status;
 wire          ps2_kbd_clk, ps2_kbd_data;
 wire          osd_shown;
 
-wire [7:0]    scan2x_r, scan2x_g, scan2x_b;
+wire [ 7:0]   scan2x_r, scan2x_g, scan2x_b;
 wire          scan2x_hs, scan2x_vs, scan2x_clk;
-wire          scan2x_enb;
-wire [6:0]    core_mod;
-wire [3:0]    but_start, but_coin;
+wire [ 6:0]   core_mod;
+wire [ 3:0]   but_start, but_coin;
 
-wire  [ 1:0]  rotate;
+wire [ 1:0]   rotate;
 wire          ioctl_cheat, sdram_init;
 
 wire  [15:0]  board_left, board_right;
@@ -198,6 +200,7 @@ wire          bd_mouse_st, bd_mouse_idx;
 wire  [ 7:0]  bd_mouse_f;
 
 
+assign bridge_endian_little = 0;
 assign board_status = { {64-DIPBASE{1'b0}}, status[DIPBASE-1:0] };
 assign paddle_1 = 0;
 assign paddle_2 = 0;
@@ -208,6 +211,7 @@ jtframe_pocket_base #(
     .COLORW         ( COLORW        )
 ) u_base(
     .rst            ( rst           ),
+    .rst_req        ( rst_req       ),
     .sdram_init     ( sdram_init    ),
     .clk_sys        ( clk_sys       ),
     .clk_rom        ( clk_rom       ),
@@ -229,27 +233,15 @@ jtframe_pocket_base #(
     .scan2x_b       ( scan2x_b[7:2] ),
     .scan2x_hs      ( scan2x_hs     ),
     .scan2x_vs      ( scan2x_vs     ),
-    .scan2x_enb     ( scan2x_enb    ),
     .scan2x_clk     ( scan2x_clk    ),
     // MiST VGA pins (includes OSD)
-    .VIDEO_R        ( VGA_R         ),
-    .VIDEO_G        ( VGA_G         ),
-    .VIDEO_B        ( VGA_B         ),
-    .VIDEO_HS       ( VGA_HS        ),
-    .VIDEO_VS       ( VGA_VS        ),
-    // SPI interface to arm io controller
-    .SPI_DO         ( SPI_DO        ),
-    .SPI_DI         ( SPI_DI        ),
-    .SPI_SCK        ( SPI_SCK       ),
-    .SPI_SS2        ( SPI_SS2       ),
-`ifndef NEPTUNO
-    .SPI_SS3        ( SPI_SS3       ),
-    .SPI_SS4        ( SPI_SS4       ),
-`else
-    .SPI_SS3        ( SPI_SS2       ),  // SS2 reused on NeptUNO for OSD
-    .SPI_SS4        (               ),
-`endif
-    .CONF_DATA0     ( CONF_DATA0    ),
+    .pck_rgb        ( pck_rgb       ),
+    .pck_rgb_clk    ( pck_rgb_clk   ),
+    .pck_rgb_clk90  ( pck_rgb_clk_90),
+    .pck_de         ( pck_de        ),
+    .pck_skip       ( pck_skip      ),
+    .pck_vs         ( pck_vs        ),
+    .pck_hs         ( pck_hs        ),
     // control
     .status         ( status        ),
     .joystick1      ( joystick1     ),
@@ -440,7 +432,7 @@ jtframe_board #(
     .scan2x_b       ( scan2x_b        ),
     .scan2x_hs      ( scan2x_hs       ),
     .scan2x_vs      ( scan2x_vs       ),
-    .scan2x_enb     ( scan2x_enb      ),
+    .scan2x_enb     ( 1'b1            ),    // no scan doubler
     .scan2x_clk     ( scan2x_clk      ),
     // Debug
     .gfx_en         ( gfx_en          ),

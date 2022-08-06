@@ -163,7 +163,6 @@ module jtframe_pocket_top(
     // logical connections
     //
 
-    ///////////////////////////////////////////////////
     // video, audio output to scaler
     output    [23:0]  video_rgb,
     output            video_rgb_clock,
@@ -182,7 +181,7 @@ module jtframe_pocket_top(
     output            bridge_endian_little,
     input     [31:0]  bridge_addr,
     input             bridge_rd,
-    output reg [31:0] bridge_rd_data,
+    output    [31:0]  bridge_rd_data,
     input             bridge_wr,
     input     [31:0]  bridge_wr_data,
 
@@ -235,22 +234,6 @@ assign port_tran_sck_dir = 1'b0;    // clock direction can change
 assign port_tran_sd      = 1'bz;
 assign port_tran_sd_dir  = 1'b0;     // SD is input and not used
 
-
-// for bridge write data, we just broadcast it to all bus devices
-// for bridge read data, we have to mux it
-// add your own devices here
-always @(*) begin
-    casex(bridge_addr)
-    32'h10xxxxxx: begin
-        // example
-        // bridge_rd_data <= example_device_data;
-    end
-    32'hF8xxxxxx: begin
-        bridge_rd_data <= cmd_bridge_rd_data;
-    end
-    endcase
-end
-
 localparam GAME_BUTTONS=`JTFRAME_BUTTONS;
 
 jtframe_pocket #(
@@ -283,11 +266,13 @@ u_frame(
     .pxl_cen        ( pxl_cen        ),
     .pxl2_cen       ( pxl2_cen       ),
     // MiST VGA pins
-    .VGA_R          ( VGA_R          ),
-    .VGA_G          ( VGA_G          ),
-    .VGA_B          ( VGA_B          ),
-    .VGA_HS         ( VGA_HS         ),
-    .VGA_VS         ( VGA_VS         ),
+    .pck_rgb        ( video_rgb      ),
+    .pck_rgb_clk    ( video_rgb_clock),
+    .pck_rgb_clk90  ( video_rgb_clock_90 ),
+    .pck_de         ( video_de       ),
+    .pck_skip       ( video_skip     ),
+    .pck_vs         ( video_vs       ),
+    .pck_hs         ( video_hs       ),
     // LED
     .game_led       ( game_led       ),
     // UART
@@ -363,13 +348,15 @@ u_frame(
     .game_rst_n     (                ),
     // reset forcing signals:
     .rst_req        ( rst_req        ),
-    // Sound
+    // Sound from game
     .snd_left       ( snd_left       ),
     .snd_right      ( snd_right      ),
     .snd_sample     ( sample         ),
-    .AUDIO_L        ( AUDIO_L        ),
-    .AUDIO_R        ( AUDIO_R        ),
-    // joystick
+    // Sound to Pcket
+    .audio_mclk     ( audio_mclk     ),
+    .audio_adc      ( audio_adc      ),
+    .audio_dac      ( audio_dac      ),
+    .audio_lrck     ( audio_lrck     ),    // joystick
     .game_joystick1 ( game_joy1      ),
     .game_joystick2 ( game_joy2      ),
     .game_joystick3 ( game_joy3      ),

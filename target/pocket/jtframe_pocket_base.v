@@ -14,50 +14,42 @@
 
     Author: Jose Tejada Gomez. Twitter: @topapate
     Version: 1.0
-    Date: 27-10-2017 */
+    Date: 6-8-2022 */
 
-module jtframe_mist_base #(parameter
+module jtframe_pocket_base #(parameter
     SIGNED_SND      = 1'b0,
     COLORW          = 4
 ) (
     input           rst,
+    output          rst_req,
     input           clk_sys,
     input           clk_rom,
     input           sdram_init,
     output          osd_shown,
     output  [6:0]   core_mod,
-    // Base video
-    input   [1:0]   osd_rotate,
-    input [COLORW-1:0] game_r,
-    input [COLORW-1:0] game_g,
-    input [COLORW-1:0] game_b,
-    input           LHBL,
-    input           LVBL,
-    input           hs,
-    input           vs,
-    input           pxl_cen,
+
+    // Bridge Connection
+    input  [31:0]   bridge_addr,
+    input           bridge_rd,
+    output [31:0]   bridge_rd_data,
+    input           bridge_wr,
+    input  [31:0]   bridge_wr_data,
     // Scan-doubler video
     input   [5:0]   scan2x_r,
     input   [5:0]   scan2x_g,
     input   [5:0]   scan2x_b,
     input           scan2x_hs,
     input           scan2x_vs,
-    output          scan2x_enb, // scan doubler enable bar = scan doubler disable.
     input           scan2x_clk,
-    // Final video: VGA+OSD or base+OSD depending on configuration
-    output  [5:0]   VIDEO_R,
-    output  [5:0]   VIDEO_G,
-    output  [5:0]   VIDEO_B,
-    output          VIDEO_HS,
-    output          VIDEO_VS,
-    // SPI interface to arm io controller
-    inout           SPI_DO,
-    input           SPI_DI,
-    input           SPI_SCK,
-    input           SPI_SS2,
-    input           SPI_SS3,    // OSD interface
-    input           SPI_SS4,
-    input           CONF_DATA0,
+    input           scan2x_de,
+    // Final video
+    output  [23:0]  pck_rgb,
+    output          pck_rgb_clk,
+    output          pck_rgb_clk_90,
+    output          pck_de,
+    output          pck_skip,
+    output          pck_vs,
+    output          pck_hs,
     // control
     output [63:0]   status,
     output [31:0]   joystick1,
@@ -73,23 +65,16 @@ module jtframe_mist_base #(parameter
     output [15:0]   joyana_l4,
     output [15:0]   joyana_r4,
 
-    output [ 8:0]   mouse_dx,
-    output [ 8:0]   mouse_dy,
-    output [ 7:0]   mouse_f,
-    output          mouse_st,
-    output          mouse_idx,
-
     output [ 3:0]   but_coin,   // buttons, active high
     output [ 3:0]   but_start,
-    // PS2 pins are outputs if NEPTUNO isn't defined
-    inout           ps2_kbd_clk,
-    inout           ps2_kbd_data,
     // Sound
-    input           clk_dac,
     input   [15:0]  snd_left,
     input   [15:0]  snd_right,
-    output          snd_pwm_left,
-    output          snd_pwm_right,
+    input           snd_sample,
+
+    input           audio_mclk,
+    output          audio_dac,
+    output          audio_lrck,
     // Pocket inputs
     input  [15:0]   cont1_key,
     input  [15:0]   cont2_key,
@@ -105,26 +90,24 @@ module jtframe_mist_base #(parameter
     input  [15:0]   cont4_trig
 
     // ROM load from SPI
-    output [24:0]   ioctl_addr,
-    output [ 7:0]   ioctl_dout,
-    input  [ 7:0]   ioctl_din,
-    output          ioctl_wr,
-    output          ioctl_ram,
-    output          ioctl_cheat,
-    output          downloading
+    output reg [24:0]   ioctl_addr,
+    output reg [ 7:0]   ioctl_dout,
+    input      [ 7:0]   ioctl_din,
+    output reg          ioctl_wr,
+    output              ioctl_ram,
+    output              ioctl_cheat,
+    output reg          downloading
 
 );
 
 localparam [7:0] IDX_CHEAT = 8'h10,
                  IDX_NVRAM = 8'hFF;
 
-wire        ypbpr, no_csync;
 wire [7:0]  ioctl_index;
 wire        ioctl_download, ioctl_upload;
 
-assign downloading = ioctl_download;
-assign ioctl_ram   = (ioctl_index == IDX_NVRAM && ioctl_download) || ioctl_upload;
-assign ioctl_cheat = ioctl_index == IDX_CHEAT && ioctl_download;
+assign ioctl_ram   = 0;
+assign ioctl_cheat = 0;
 
 // Convert Pocket inputs to JTFRAME standard
 function [31:0] joyconv( input [15:0] joy_in );
@@ -141,47 +124,25 @@ assign { joyana_r1, joyana_l1 } = cont1_joy;
 assign { joyana_r2, joyana_l2 } = cont2_joy;
 assign { joyana_r3, joyana_l3 } = cont3_joy;
 assign { joyana_r4, joyana_l4 } = cont4_joy;
+assign but_coin  = { cont4_key[14], cont3_key[14], cont2_key[14], cont1_key[14] };
+assign but_start = { cont4_key[15], cont3_key[15], cont2_key[15], cont1_key[15] };
 
 //
 // host/target command handler
 //
 wire            reset_n;                // driven by host commands, can be used as core-wide reset
-wire    [31:0]  cmd_bridge_rd_data;
 
 // bridge host commands
 // synchronous to clk_74a
 wire            status_boot_done = pll_core_locked;
-wire            status_setup_done = pll_core_locked; // rising edge triggers a target command
-wire            status_running = reset_n; // we are running as soon as reset_n goes high
 
 wire            dataslot_requestread;
 wire    [15:0]  dataslot_requestread_id;
-wire            dataslot_requestread_ack = 1;
-wire            dataslot_requestread_ok = 1;
 
 wire            dataslot_requestwrite;
 wire    [15:0]  dataslot_requestwrite_id;
-wire            dataslot_requestwrite_ack = 1;
-wire            dataslot_requestwrite_ok = 1;
 
-wire            dataslot_allcomplete;
-
-wire            savestate_supported;
-wire    [31:0]  savestate_addr;
-wire    [31:0]  savestate_size;
-wire    [31:0]  savestate_maxloadsize;
-
-wire            savestate_start;
-wire            savestate_start_ack;
-wire            savestate_start_busy;
-wire            savestate_start_ok;
-wire            savestate_start_err;
-
-wire            savestate_load;
-wire            savestate_load_ack;
-wire            savestate_load_busy;
-wire            savestate_load_ok;
-wire            savestate_load_err;
+wire            dataslot_done;
 
 // bridge target commands
 // synchronous to clk_74a
@@ -194,54 +155,108 @@ wire            datatable_wren;
 wire    [31:0]  datatable_data;
 wire    [31:0]  datatable_q;
 
+assign rst_req = ~rst_req_n;
+assign ioctl_index = dataslot_requestwrite_id[7:0];
+
+wire        wr_s;
+wire [31:0] data_s, addr_s;
+reg  [ 2:0] ioctl_byte;
+reg  [31:0] ioctl_qword;
+reg         prog_rdyl;
+
+assign ioctl_dout = ioctl_qword[7:0];
+
+jtframe_sync #( .W(1+16+32) )
+u_sync(
+    .clk_in     ( clk_74a           ),
+    .clk_out    ( clk_rom           ),
+    .raw        ( { bridge_wr, bridge_wr_data, bridge_addr } ),
+    .sync       ( { wr_s, data_s, addr_s }  )
+);
+
+always @(posedge clk_rom) begin
+    prog_rdyl <= prog_rdy;
+    ioctl_wr  <= 0;
+    if( wr_s ) begin
+        ioctl_byte  <= 3'd1;
+        ioctl_wr    <= 1;
+        ioctl_qword <= data_s;
+        downloading <= 1;
+        ioctl_addr  <= { bridge_addr[22:0], 2'd0 };
+    end
+    if( prog_rdyl ) begin
+        ioctl_addr[1:0]  <= ioctl_addr[1:0] + 1'd1;
+        ioctl_byte  <= ioctl_byte  << 1;
+        ioctl_qword <= ioctl_qword >> 8;
+        ioctl_wr    <= ioctl_byte!= 0;
+    end
+    if( dataslot_done ) begin
+        downloading <= 0;
+    end
+end
+
 core_bridge_cmd u_bridge (
-    .clk                ( clk_74a ),
-    .reset_n            ( reset_n ),
+    .clk                        ( clk_74a                   ),
+    .reset_n                    ( rst_req_n                 ),
 
-    .bridge_endian_little   ( bridge_endian_little ),
-    .bridge_addr            ( bridge_addr ),
-    .bridge_rd              ( bridge_rd ),
-    .bridge_rd_data         ( cmd_bridge_rd_data ),
-    .bridge_wr              ( bridge_wr ),
-    .bridge_wr_data         ( bridge_wr_data ),
+    .bridge_addr                ( 32'd0                     ),
+    .bridge_rd                  ( 1'b0                      ),
+    .bridge_rd_data             (                           ),
+    .bridge_wr                  ( bridge_wr                 ),
+    .bridge_wr_data             ( bridge_wr_data            ),
 
-    .status_boot_done       ( status_boot_done ),
-    .status_setup_done      ( status_setup_done ),
-    .status_running         ( status_running ),
+    .status_boot_done           ( status_boot_done          ),
+    .status_setup_done          ( status_boot_done          ),
+    .status_running             ( rst_req_n                 ),
 
-    .dataslot_requestread       ( dataslot_requestread ),
-    .dataslot_requestread_id    ( dataslot_requestread_id ),
-    .dataslot_requestread_ack   ( dataslot_requestread_ack ),
-    .dataslot_requestread_ok    ( dataslot_requestread_ok ),
+    .dataslot_requestread       ( dataslot_requestread      ),
+    .dataslot_requestread_id    ( dataslot_requestread_id   ),
+    .dataslot_requestread_ack   ( 1'b1                      ),
+    .dataslot_requestread_ok    ( 1'b1                      ),
 
-    .dataslot_requestwrite      ( dataslot_requestwrite ),
-    .dataslot_requestwrite_id   ( dataslot_requestwrite_id ),
-    .dataslot_requestwrite_ack  ( dataslot_requestwrite_ack ),
-    .dataslot_requestwrite_ok   ( dataslot_requestwrite_ok ),
+    .dataslot_requestwrite      ( dataslot_requestwrite     ),
+    .dataslot_requestwrite_id   ( dataslot_requestwrite_id  ),
+    .dataslot_requestwrite_ack  ( 1'b1                      ),
+    .dataslot_requestwrite_ok   ( 1'b1                      ),
 
-    .dataslot_allcomplete   ( dataslot_allcomplete ),
+    .dataslot_allcomplete       ( dataslot_done             ),
 
-    .savestate_supported    ( savestate_supported ),
-    .savestate_addr         ( savestate_addr ),
-    .savestate_size         ( savestate_size ),
-    .savestate_maxloadsize  ( savestate_maxloadsize ),
+    .savestate_supported        ( 1'b0                      ),
+    .savestate_addr             ( 32'd0                     ),
+    .savestate_size             ( 32'd0                     ),
+    .savestate_maxloadsize      ( 32'd0                     ),
 
-    .savestate_start        ( savestate_start ),
-    .savestate_start_ack    ( savestate_start_ack ),
-    .savestate_start_busy   ( savestate_start_busy ),
-    .savestate_start_ok     ( savestate_start_ok ),
-    .savestate_start_err    ( savestate_start_err ),
+    .savestate_start            (                           ),
+    .savestate_start_ack        ( 1'd0                      ),
+    .savestate_start_busy       ( 1'd0                      ),
+    .savestate_start_ok         ( 1'd0                      ),
+    .savestate_start_err        ( 1'd0                      ),
 
-    .savestate_load         ( savestate_load ),
-    .savestate_load_ack     ( savestate_load_ack ),
-    .savestate_load_busy    ( savestate_load_busy ),
-    .savestate_load_ok      ( savestate_load_ok ),
-    .savestate_load_err     ( savestate_load_err ),
+    .savestate_load             (                           ),
+    .savestate_load_ack         ( 1'd0                      ),
+    .savestate_load_busy        ( 1'd0                      ),
+    .savestate_load_ok          ( 1'd0                      ),
+    .savestate_load_err         ( 1'd0                      )
+);
 
-    .datatable_addr         ( datatable_addr ),
-    .datatable_wren         ( datatable_wren ),
-    .datatable_data         ( datatable_data ),
-    .datatable_q            ( datatable_q )
+jtframe_pocket_video u_video(
+    .clk            ( scan2x_clk    ),
+    .pxl2_cen       ( pxl2_cen      ),
+    // Scan-doubler video
+    .scan2x_r       ( scan2x_r      ),
+    .scan2x_g       ( scan2x_g      ),
+    .scan2x_b       ( scan2x_b      ),
+    .scan2x_hs      ( scan2x_hs     ),
+    .scan2x_vs      ( scan2x_vs     ),
+    .scan2x_de      ( scan2x_de     ),
+    // Final video
+    .pck_rgb        ( pck_rgb       ),
+    .pck_rgb_clk    ( pck_rgb_clk   ),
+    .pck_rgb_clk_90 ( pck_rgb_clk_90),
+    .pck_de         ( pck_de        ),
+    .pck_skip       ( pck_skip      ),
+    .pck_vs         ( pck_vs        ),
+    .pck_hs         ( pck_hs        )
 );
 
 endmodule

@@ -282,7 +282,7 @@ set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to dram_*
 set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER ON -to dram_dq[*]
 set_instance_assignment -name FAST_INPUT_REGISTER ON -to dram_dq[*]
 
-set_global_assignment -name QIP_FILE ${MODULES}/jtframe/target/pocket/pocket.qip
+set_global_assignment -name QIP_FILE target.qip
 set_global_assignment -name QIP_FILE game.qip
 
 set_global_assignment -name VERILOG_MACRO "POCKET=1"
