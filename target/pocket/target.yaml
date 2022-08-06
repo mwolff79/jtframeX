@@ -7,10 +7,7 @@ here:
   - pocket.sdc
   # Files from Analogue apf
   - apf/apf_top.v
-  - apf/build_id_gen.tcl
-  - apf/build_id.mif
   - apf/common.v
   - apf/io_bridge_peripheral.v
   - apf/io_pad_controller.v
-  - apf/mf_datatable.qip
   - apf/mf_ddio_bidir_12.qip

@@ -38,7 +38,7 @@
 
 set_global_assignment -name FAMILY "Cyclone V"
 set_global_assignment -name DEVICE 5CEBA4F23C8
-set_global_assignment -name TOP_LEVEL_ENTITY jtframe_pocket_top
+set_global_assignment -name TOP_LEVEL_ENTITY apf_top
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 13.1
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "09:39:43  AGOSTO 06, 2022"
 set_global_assignment -name LAST_QUARTUS_VERSION 13.1
@@ -286,3 +286,4 @@ set_global_assignment -name QIP_FILE target.qip
 set_global_assignment -name QIP_FILE game.qip
 
 set_global_assignment -name VERILOG_MACRO "POCKET=1"
+# Leave the blank line
