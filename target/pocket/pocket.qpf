@@ -23,8 +23,8 @@
 # -------------------------------------------------------------------------- #
 
 QUARTUS_VERSION = "13.1"
-DATE = "09:39:43  agosto 06, 2022"
+DATE = "${DATE}"
 
 # Revisions
 
-PROJECT_REVISION = "pocket"
+PROJECT_REVISION = "jt${CORENAME}"
