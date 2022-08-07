@@ -59,9 +59,9 @@ input   wire    [31:0]  pmp_rd_data,
 output  reg             pmp_wr,
 output  reg     [31:0]  pmp_wr_data,
 
-inout   reg             phy_spimosi,
-inout   reg             phy_spimiso,
-inout   reg             phy_spiclk,
+inout                   phy_spimosi,
+inout                   phy_spimiso,
+inout                   phy_spiclk,
 input   wire            phy_spiss
 
 );
