@@ -216,9 +216,9 @@ jtframe_pocket_base #(
     .osd_shown      ( osd_shown     ),
     .prog_rdy       ( prog_rdy      ),
     // Scan-doubler video
-    .scan2x_r       ( scan2x_r[7:2] ),
-    .scan2x_g       ( scan2x_g[7:2] ),
-    .scan2x_b       ( scan2x_b[7:2] ),
+    .scan2x_r       ( scan2x_r      ),
+    .scan2x_g       ( scan2x_g      ),
+    .scan2x_b       ( scan2x_b      ),
     .scan2x_hs      ( scan2x_hs     ),
     .scan2x_vs      ( scan2x_vs     ),
     .scan2x_clk     ( scan2x_clk    ),

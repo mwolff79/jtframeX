@@ -512,7 +512,6 @@ u_frame(
     // Mouse inputs
     .mouse_1p       ( mouse_1p       ),
     .mouse_2p       ( mouse_2p       ),
-    .LED            ( LED            ),
     // DIP and OSD settings
     .enable_fm      ( enable_fm      ),
     .enable_psg     ( enable_psg     ),

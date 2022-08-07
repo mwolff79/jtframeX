@@ -39,9 +39,9 @@ module jtframe_pocket_base #(parameter
     input           bridge_wr,
     input  [31:0]   bridge_wr_data,
     // Scan-doubler video
-    input   [5:0]   scan2x_r,
-    input   [5:0]   scan2x_g,
-    input   [5:0]   scan2x_b,
+    input   [7:0]   scan2x_r,
+    input   [7:0]   scan2x_g,
+    input   [7:0]   scan2x_b,
     input           scan2x_hs,
     input           scan2x_vs,
     input           scan2x_clk,
@@ -113,12 +113,12 @@ wire        ioctl_download, ioctl_upload;
 assign ioctl_ram   = 0;
 assign ioctl_cheat = 0;
 assign osd_shown   = 0;
+assign status      = 0;
 
 // Convert Pocket inputs to JTFRAME standard
 function [31:0] joyconv( input [15:0] joy_in );
-    joyconv[31:14] = 0;
-    joyconv[13:4] = joy_in[13:4];
-    joyconv[3:0] = { joy_in[0], joy_in[1], joy_in[2], joy_in[3] };
+    joyconv[31:14] = { 18'd0,
+        joy_in[13:4], joy_in[0], joy_in[1], joy_in[2], joy_in[3] };
 endfunction
 
 assign joystick1 = joyconv( cont1_key );
@@ -160,12 +160,12 @@ assign ioctl_dout = ioctl_qword[7:0];
 always @(posedge clk_rom, posedge rst) begin
     if( rst ) begin
         core_mod <= 0;
-    end else if( ioctl_wr && ioctl_index==1 )
+    end else if( ioctl_wr && ioctl_index==1 ) begin
         core_mod <= ioctl_dout[6:0];
     end
 end
 
-jtframe_sync #( .W(1+16+32) )
+jtframe_sync #( .W(1+32+32) )
 u_sync(
     .clk_in     ( clk_74a           ),
     .clk_out    ( clk_rom           ),

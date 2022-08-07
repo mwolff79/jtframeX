@@ -74,12 +74,6 @@ assign pll_locked = pll0_lock & pll1_lock & pll2_lock;
 `JTFRAME_PLL u_basepll(
     .inclk0 ( clk27     ),
     .c0     ( pll_base  ),
-`ifdef SIMULATION  // This prevents a warning that we can ignore
-    .c1     (           ),
-    .c2     (           ),
-    .c3     (           ),
-    .c4     (           ),
-`endif
     .locked ( pll2_lock )
 );
 

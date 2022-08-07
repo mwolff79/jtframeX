@@ -39,7 +39,7 @@ module io_pad_controller (
 input   wire            clk,
 input   wire            reset_n,
 
-inout   reg             pad_1wire,
+inout   wire            pad_1wire,
 
 output  reg     [15:0]  cont1_key,
 output  reg     [15:0]  cont2_key,
@@ -58,6 +58,7 @@ output  reg             rx_timed_out
 );
 
 reg         reset_tr_n;
+reg         pad_1wire_reg;
 localparam  BITLEN = 60;
 
 reg         rx_word_done;
@@ -82,10 +83,10 @@ localparam  TR_RX_DONE      = 'd7;
 
 reg [3:0]   tr_state;
 
-    wire        reset_n_s;
-synch_3 s00(reset_n, reset_n_s, clk);
+wire        reset_n_s;
+synch_3 s00(.i(reset_n), .o(reset_n_s), .clk(clk));
 
-    wire        pad_1wire_s, pad_1wire_r, pad_1wire_f;
+wire        pad_1wire_s, pad_1wire_r, pad_1wire_f;
 synch_3 s01(pad_1wire, pad_1wire_s, clk, pad_1wire_r, pad_1wire_f);
 
 
@@ -111,6 +112,8 @@ localparam  ST_END_TX       = 'd5;
 
 reg [3:0]   state;
 reg [3:0]   cnt;
+
+assign pad_1wire = pad_1wire_reg;
 
 always @(posedge clk) begin
     tx_word_start <= 0;
@@ -231,7 +234,7 @@ always @(posedge clk) begin
         tr_bit <= 0;
         tr_cnt <= 0;
             
-        pad_1wire <= 1'bZ;
+        pad_1wire_reg <= 1'bZ;
         
         if(tx_word_start & ~tx_word_start_1) begin
             // transmit word
@@ -251,7 +254,7 @@ always @(posedge clk) begin
         tr_cnt <= tr_cnt + 1'b1;
         if(&tr_cnt) begin
             // drive from tristate(high) to explicitly high to prevent glitching
-            pad_1wire <= 1'b1;
+            pad_1wire_reg <= 1'b1;
             tr_state <= TR_TX_CONTINUE;
         end
     end
@@ -259,13 +262,13 @@ always @(posedge clk) begin
         tr_cnt <= tr_cnt + 1'b1;
         case(tr_cnt)
         0: begin
-            pad_1wire <= 1'b0;
+            pad_1wire_reg <= 1'b0;
         end
         (BITLEN/3): begin
-            pad_1wire <= tx_word_shift[31];
+            pad_1wire_reg <= tx_word_shift[31];
         end
         (BITLEN*2/3): begin
-            pad_1wire <= 1'b1;
+            pad_1wire_reg <= 1'b1;
         end
         (BITLEN-1): begin
             tr_cnt <= 0;

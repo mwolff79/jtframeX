@@ -57,7 +57,7 @@ func parse_args() (cfg Config) {
 		fmt.Println("usage: jtcfgstr [-target (mist|mister|sidi|neptuno|mc2|mcp|pocket)] [-def path to def file] [-tpl path to template file]")
 		os.Exit(1)
 	}
-	flag.StringVar(&cfg.target, "target", "mist", "Target platform (mist, mister, sidi, neptuno, mc2, mcp)")
+	flag.StringVar(&cfg.target, "target", "mist", "Target platform (mist, mister, sidi, neptuno, mc2, mcp, pocket)")
 	flag.StringVar(&cfg.deffile, "parse", "", "Path to .def file")
 	flag.StringVar(&cfg.template, "tpl", "", "Path to template file")
 	flag.StringVar(&cfg.commit, "commit", "nocommit", "Commit ID")
@@ -73,7 +73,7 @@ func parse_args() (cfg Config) {
 		break
 	default:
 		{
-			fmt.Println("Unsupported target ", cfg.target)
+			fmt.Printf("Unsupported target '%s'\n", cfg.target)
 			os.Exit(1)
 		}
 	}

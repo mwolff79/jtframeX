@@ -66,14 +66,20 @@ input   wire            phy_spiss
 
 );
 
+reg phy_spimosi_reg, phy_spimiso_reg, phy_spiclk_reg;
+
+assign phy_spimosi = phy_spimosi_reg;
+assign phy_spimiso = phy_spimiso_reg;
+assign phy_spiclk  = phy_spiclk_reg;
+
 //
 // clock domain: clk (74.25mhz) rising edge
 //
     wire reset_n_s;
-synch_3 s00(reset_n, reset_n_s, clk);
+synch_3 s00(.i(reset_n), .o(reset_n_s), .clk(clk));
 
     wire endian_little_s;
-synch_3 s81(endian_little, endian_little_s, clk);
+synch_3 s81(.i(endian_little), .o(endian_little_s), .clk(clk));
 
     wire phy_spiss_s, phy_spiss_r, phy_spiss_f;
 synch_3 s02(phy_spiss, phy_spiss_s, clk, phy_spiss_r, phy_spiss_f);
@@ -98,7 +104,7 @@ synch_3 s02(phy_spiss, phy_spiss_s, clk, phy_spiss_r, phy_spiss_f);
 
     // synchronize rd byte flag's rising edge into clk
     wire rx_byte_done_s, rx_byte_done_r;
-synch_3 s03(rx_byte_done, rx_byte_done_s, clk, rx_byte_done_r);
+synch_3 s03(.i(rx_byte_done), .o(rx_byte_done_s), .clk(clk), .rise(rx_byte_done_r));
 
     reg         bursting;
     
@@ -245,9 +251,9 @@ always @(posedge clk) begin
     ST_SIDLE: begin
         spis_count <= 0;
         
-        phy_spiclk <= 1'bZ;
-        phy_spimosi <= 1'bZ;
-        phy_spimiso <= 1'bZ;
+        phy_spiclk_reg <= 1'bZ;
+        phy_spimosi_reg <= 1'bZ;
+        phy_spimiso_reg <= 1'bZ;
         
         if(spis_tx) begin
             spis_word <= spis_word_tx;
@@ -256,29 +262,29 @@ always @(posedge clk) begin
     end
     // drive high first
     ST_SEND_N: begin
-        phy_spiclk <= 1'b1;
-        phy_spimosi <= 1'b1;
-        phy_spimiso <= 1'b1;
+        phy_spiclk_reg <= 1'b1;
+        phy_spimosi_reg <= 1'b1;
+        phy_spimiso_reg <= 1'b1;
         spis <= ST_SEND_0;  
     end
     // tx, shift out bits
     ST_SEND_0: begin        
-        phy_spiclk <= 0;    
+        phy_spiclk_reg <= 0;
         spis <= ST_SEND_1;      
-        phy_spimosi <= spis_word[31];
-        phy_spimiso <= spis_word[30];
+        phy_spimosi_reg <= spis_word[31];
+        phy_spimiso_reg <= spis_word[30];
         spis_word <= {spis_word[29:0], 2'b00};  
     end
     ST_SEND_1: begin        
-        phy_spiclk <= 1;    
+        phy_spiclk_reg <= 1;
         spis <= ST_SEND_0;      
         spis_count <= spis_count + 1'b1;    
         if(spis_count == 15) spis <= ST_SEND_2; 
     end
     ST_SEND_2: begin        
-        phy_spiclk <= 1'b1; 
-        phy_spimosi <= 1'b1;
-        phy_spimiso <= 1'b1;
+        phy_spiclk_reg <= 1'b1;
+        phy_spimosi_reg <= 1'b1;
+        phy_spimiso_reg <= 1'b1;
         spis <= ST_SEND_3;      
         spis_done <= 1; 
     end
@@ -297,14 +303,14 @@ end
 
 
 //
-// clock domain: phy_spiclk rising edge
+// clock domain: phy_spiclk_reg rising edge
 //
     reg [1:0]   rx_latch_idx;
     reg [7:0]   rx_dat;
     reg [7:0]   rx_byte;    // latched by clk, but upon a synchronized trigger
     reg         rx_byte_done;
     
-always @(posedge phy_spiclk or posedge phy_spiss) begin
+always @(posedge phy_spiclk_reg or posedge phy_spiss) begin
     
     if(phy_spiss) begin
         // reset 
@@ -316,12 +322,12 @@ always @(posedge phy_spiclk or posedge phy_spiss) begin
         rx_byte_done <= 0;
         
         case(rx_latch_idx)
-        0: begin    rx_dat[7:6] <= {phy_spimosi, phy_spimiso}; rx_latch_idx <= 1;   end
-        1: begin    rx_dat[5:4] <= {phy_spimosi, phy_spimiso}; rx_latch_idx <= 2;   end
-        2: begin    rx_dat[3:2] <= {phy_spimosi, phy_spimiso}; rx_latch_idx <= 3;   end
+        0: begin    rx_dat[7:6] <= {phy_spimosi_reg, phy_spimiso_reg}; rx_latch_idx <= 1;   end
+        1: begin    rx_dat[5:4] <= {phy_spimosi_reg, phy_spimiso_reg}; rx_latch_idx <= 2;   end
+        2: begin    rx_dat[3:2] <= {phy_spimosi_reg, phy_spimiso_reg}; rx_latch_idx <= 3;   end
         3: begin 
             // last bit of the byte
-            rx_byte <= {rx_dat[7:2], phy_spimosi, phy_spimiso};
+            rx_byte <= {rx_dat[7:2], phy_spimosi_reg, phy_spimiso_reg};
             rx_latch_idx <= 0;
             rx_byte_done <= 1;
         end

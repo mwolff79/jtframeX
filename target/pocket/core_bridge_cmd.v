@@ -24,7 +24,7 @@ input   wire    [31:0]  bridge_addr,
 input   wire            bridge_rd,
 output  reg     [31:0]  bridge_rd_data,
 input   wire            bridge_wr,
-input   wire    [31:0]  bridge_wr_data,
+input   wire    [31:0]  bridge_wr_data, // the Pocket writes to the core
 
 // all these signals should be synchronous to clk
 // add synchronizers if these need to be used in other clock domains
