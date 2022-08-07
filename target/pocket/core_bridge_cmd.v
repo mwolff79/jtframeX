@@ -25,6 +25,8 @@ input   wire            bridge_rd,
 output  reg     [31:0]  bridge_rd_data,
 input   wire            bridge_wr,
 input   wire    [31:0]  bridge_wr_data, // the Pocket writes to the core
+input                   bridge_endian_little,
+
 
 // all these signals should be synchronous to clk
 // add synchronizers if these need to be used in other clock domains
@@ -67,17 +69,15 @@ input   wire            savestate_load_err
 reg     [31:0]  bridge_wr_data_in;
 reg     [31:0]  bridge_rd_data_out;
 
-wire endian_little_s = 1;
-
 always @(*) begin
-    bridge_rd_data <= endian_little_s ? {
+    bridge_rd_data <= bridge_endian_little ? {
         bridge_rd_data_out[7:0], 
         bridge_rd_data_out[15:8], 
         bridge_rd_data_out[23:16], 
         bridge_rd_data_out[31:24]
     } : bridge_rd_data_out;
 
-    bridge_wr_data_in <= endian_little_s ? {
+    bridge_wr_data_in <= bridge_endian_little ? {
         bridge_wr_data[7:0], 
         bridge_wr_data[15:8], 
         bridge_wr_data[23:16], 

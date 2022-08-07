@@ -38,6 +38,7 @@ module jtframe_pocket_base #(parameter
     output [31:0]   bridge_rd_data,
     input           bridge_wr,
     input  [31:0]   bridge_wr_data,
+    output          bridge_endian_little,
     // Scan-doubler video
     input   [7:0]   scan2x_r,
     input   [7:0]   scan2x_g,
@@ -114,6 +115,7 @@ assign ioctl_ram   = 0;
 assign ioctl_cheat = 0;
 assign osd_shown   = 0;
 assign status      = 0;
+assign bridge_endian_little = 0;
 
 // Convert Pocket inputs to JTFRAME standard
 function [31:0] joyconv( input [15:0] joy_in );
@@ -176,15 +178,15 @@ u_sync(
 always @(posedge clk_rom) begin
     prog_rdyl <= prog_rdy;
     ioctl_wr  <= 0;
-    if( wr_s ) begin
+    if( wr_s && addr_s[31:24]!=8'hf8 ) begin
         ioctl_byte  <= 3'd1;
         ioctl_wr    <= 1;
         ioctl_qword <= data_s;
         downloading <= 1;
-        ioctl_addr  <= { bridge_addr[22:0], 2'd0 };
+        ioctl_addr  <= { addr_s[22:0], 2'd0 };
     end
     if( prog_rdyl ) begin
-        ioctl_addr[1:0]  <= ioctl_addr[1:0] + 1'd1;
+        ioctl_addr[1:0] <= ioctl_addr[1:0] + 1'd1;
         ioctl_byte  <= ioctl_byte  << 1;
         ioctl_qword <= ioctl_qword >> 8;
         ioctl_wr    <= ioctl_byte!= 0;
@@ -198,11 +200,12 @@ core_bridge_cmd u_bridge (
     .clk                        ( clk_74a                   ),
     .reset_n                    ( rst_req_n                 ),
 
-    .bridge_addr                ( 32'd0                     ),
+    .bridge_addr                ( bridge_addr               ),
     .bridge_rd                  ( 1'b0                      ),
     .bridge_rd_data             (                           ),
     .bridge_wr                  ( bridge_wr                 ),
     .bridge_wr_data             ( bridge_wr_data            ),
+    .bridge_endian_little       ( bridge_endian_little      ),
 
     .status_boot_done           ( status_boot_done          ),
     .status_setup_done          ( status_boot_done          ),

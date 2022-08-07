@@ -195,7 +195,6 @@ wire  [ 8:0]  bd_mouse_dx, bd_mouse_dy;
 wire          bd_mouse_st, bd_mouse_idx;
 wire  [ 7:0]  bd_mouse_f;
 
-assign bridge_endian_little = 0;
 assign board_status = { {64-DIPBASE{1'b0}}, status[DIPBASE-1:0] };
 assign paddle_1 = 0;
 assign paddle_2 = 0;
@@ -215,6 +214,13 @@ jtframe_pocket_base #(
     .core_mod       ( core_mod      ),
     .osd_shown      ( osd_shown     ),
     .prog_rdy       ( prog_rdy      ),
+    // Bridge
+    .bridge_addr    ( bridge_addr   ),
+    .bridge_rd      ( bridge_rd     ),
+    .bridge_rd_data ( bridge_rd_data),
+    .bridge_wr      ( bridge_wr     ),
+    .bridge_wr_data ( bridge_wr_data),
+    .bridge_endian_little(bridge_endian_little),
     // Scan-doubler video
     .scan2x_r       ( scan2x_r      ),
     .scan2x_g       ( scan2x_g      ),

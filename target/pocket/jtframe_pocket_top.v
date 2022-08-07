@@ -339,10 +339,6 @@ assign game_led[1] = 1'b0; // Let system LED info go through too
 
 localparam GAME_BUTTONS=`JTFRAME_BUTTONS;
 
-
-// bridge endianness
-assign bridge_endian_little = 1;
-
 // Unused Pocket ports
 assign port_ir_tx         = 0;
 assign port_ir_rx_disable = 1;
@@ -367,7 +363,6 @@ assign port_tran_sck           = 1'bz;
 assign port_tran_sck_dir       = 0;
 assign port_tran_sd            = 1'bz;
 assign port_tran_sd_dir        = 0;
-assign video_skip              = 0;
 assign sram_a                  = 0;
 assign sram_dq                 = 0;
 assign sram_oe_n               = 1;
@@ -400,11 +395,19 @@ jtframe_pocket #(
     `endif
 )
 u_frame(
+    .clk_74a        ( clk_74a        ),
     .clk_sys        ( clk_sys        ),
     .clk_rom        ( clk_rom        ),
     .clk_pico       ( clk_pico       ),
     .pll_locked     ( pll_locked     ),
     .status         ( status         ),
+    // Bridge
+    .bridge_addr    ( bridge_addr   ),
+    .bridge_rd      ( bridge_rd     ),
+    .bridge_rd_data ( bridge_rd_data),
+    .bridge_wr      ( bridge_wr     ),
+    .bridge_wr_data ( bridge_wr_data),
+    .bridge_endian_little(bridge_endian_little),
     // Base video
     .game_r         ( red            ),
     .game_g         ( green          ),
@@ -415,13 +418,14 @@ u_frame(
     .vs             ( vs             ),
     .pxl_cen        ( pxl_cen        ),
     .pxl2_cen       ( pxl2_cen       ),
-    // MiST VGA pins
+    // Pocket video pins
     .pck_rgb        ( video_rgb      ),
     .pck_rgb_clk    ( video_rgb_clock),
     .pck_rgb_clkq   ( video_rgb_clock_90 ),
     .pck_de         ( video_de       ),
     .pck_vs         ( video_vs       ),
     .pck_hs         ( video_hs       ),
+    .pck_skip       ( video_skip     ),
     // LED
     .game_led       ( game_led       ),
     // SDRAM interface
@@ -435,7 +439,19 @@ u_frame(
     .SDRAM_nCS      (                ),
     .SDRAM_BA       ( dram_ba        ),
     .SDRAM_CKE      ( dram_cke       ),
-
+    // Controllers
+    .cont1_trig     ( cont1_trig     ),
+    .cont2_trig     ( cont2_trig     ),
+    .cont3_trig     ( cont3_trig     ),
+    .cont4_trig     ( cont4_trig     ),
+    .cont1_joy      ( cont1_joy      ),
+    .cont2_joy      ( cont2_joy      ),
+    .cont3_joy      ( cont3_joy      ),
+    .cont4_joy      ( cont4_joy      ),
+    .cont1_key      ( cont1_key      ),
+    .cont2_key      ( cont2_key      ),
+    .cont3_key      ( cont3_key      ),
+    .cont4_key      ( cont4_key      ),
     // ROM access from game
     // Bank 0: allows R/W
     .ba0_addr       ( ba0_addr       ),

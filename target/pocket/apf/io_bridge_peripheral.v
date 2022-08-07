@@ -251,7 +251,7 @@ always @(posedge clk) begin
     ST_SIDLE: begin
         spis_count <= 0;
         
-        phy_spiclk_reg <= 1'bZ;
+        phy_spiclk_reg  <= 1'bZ;
         phy_spimosi_reg <= 1'bZ;
         phy_spimiso_reg <= 1'bZ;
         
@@ -262,7 +262,7 @@ always @(posedge clk) begin
     end
     // drive high first
     ST_SEND_N: begin
-        phy_spiclk_reg <= 1'b1;
+        phy_spiclk_reg  <= 1'b1;
         phy_spimosi_reg <= 1'b1;
         phy_spimiso_reg <= 1'b1;
         spis <= ST_SEND_0;  
@@ -282,7 +282,7 @@ always @(posedge clk) begin
         if(spis_count == 15) spis <= ST_SEND_2; 
     end
     ST_SEND_2: begin        
-        phy_spiclk_reg <= 1'b1;
+        phy_spiclk_reg  <= 1'b1;
         phy_spimosi_reg <= 1'b1;
         phy_spimiso_reg <= 1'b1;
         spis <= ST_SEND_3;      
@@ -311,26 +311,23 @@ end
     reg         rx_byte_done;
     
 always @(posedge phy_spiclk_reg or posedge phy_spiss) begin
-    
     if(phy_spiss) begin
         // reset 
         rx_byte_done <= 0;
         rx_latch_idx <= 0;
-        
     end else begin
         // spiclk rising edge, latch data
         rx_byte_done <= 0;
-        
         case(rx_latch_idx)
-        0: begin    rx_dat[7:6] <= {phy_spimosi_reg, phy_spimiso_reg}; rx_latch_idx <= 1;   end
-        1: begin    rx_dat[5:4] <= {phy_spimosi_reg, phy_spimiso_reg}; rx_latch_idx <= 2;   end
-        2: begin    rx_dat[3:2] <= {phy_spimosi_reg, phy_spimiso_reg}; rx_latch_idx <= 3;   end
-        3: begin 
-            // last bit of the byte
-            rx_byte <= {rx_dat[7:2], phy_spimosi_reg, phy_spimiso_reg};
-            rx_latch_idx <= 0;
-            rx_byte_done <= 1;
-        end
+            0: begin rx_dat[7:6] <= {phy_spimosi_reg, phy_spimiso_reg}; rx_latch_idx <= 1;   end
+            1: begin rx_dat[5:4] <= {phy_spimosi_reg, phy_spimiso_reg}; rx_latch_idx <= 2;   end
+            2: begin rx_dat[3:2] <= {phy_spimosi_reg, phy_spimiso_reg}; rx_latch_idx <= 3;   end
+            3: begin
+                // last bit of the byte
+                rx_byte <= {rx_dat[7:2], phy_spimosi_reg, phy_spimiso_reg};
+                rx_latch_idx <= 0;
+                rx_byte_done <= 1;
+            end
         endcase
     end
 end

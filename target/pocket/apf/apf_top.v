@@ -288,10 +288,10 @@ mf_ddio_bidir_12 isclk(
     wire    [15:0]  cont4_trig;
         
 io_pad_controller ipm (
-    .clk            ( clk_74a ),
-    .reset_n        ( reset_n ),
+    .clk                ( clk_74a  ),
+    .reset_n            ( reset_n  ),
 
-    .pad_1wire      ( bridge_1wire ),
+    .pad_1wire          ( bridge_1wire ),
         
     .cont1_key          ( cont1_key ),
     .cont2_key          ( cont2_key ),
@@ -426,17 +426,16 @@ jtframe_pocket_top ic (
     
     .aux_sda                ( aux_sda ),
     .aux_scl                ( aux_scl ),    
-    
-    
+
     // logical connections with user core
     //
-    .video_rgb              ( video_rgb ),
-    .video_rgb_clock        ( video_rgb_clock ),
+    .video_rgb              ( video_rgb          ),
+    .video_rgb_clock        ( video_rgb_clock    ),
     .video_rgb_clock_90     ( video_rgb_clock_90 ),
-    .video_de               ( video_de ),
-    .video_skip             ( video_skip ),
-    .video_vs               ( video_vs ),
-    .video_hs               ( video_hs ),
+    .video_de               ( video_de           ),
+    .video_skip             ( video_skip         ),
+    .video_vs               ( video_vs           ),
+    .video_hs               ( video_hs           ),
 
     .audio_mclk             ( scal_audmclk ),
     .audio_adc              ( scal_audadc ),
@@ -462,7 +461,6 @@ jtframe_pocket_top ic (
     .cont2_trig             ( cont2_trig ),
     .cont3_trig             ( cont3_trig ),
     .cont4_trig             ( cont4_trig )
-    
 );
 
 endmodule
