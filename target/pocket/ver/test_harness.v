@@ -62,6 +62,19 @@ module test_harness(
 );
 
 wire [31:0] frame_cnt;
+integer fincnt;
+
+initial begin
+    clk_74a = 0;
+    forever #6.734 clk_74a = ~clk_74a;
+end
+
+initial begin
+    clk_74b = 0;
+    #1.734
+    forever #6.734 clk_74b = ~clk_74b;
+end
+
 
 mt48lc16m16a2 u_sdram (
     .Dq         ( sdram_dq      ),
@@ -78,5 +91,17 @@ mt48lc16m16a2 u_sdram (
     .VS         ( vblank        ),
     .frame_cnt  ( frame_cnt     )
 );
+
+initial begin
+    $display("Simulate for %d ms",`SIM_MS);
+    forever begin
+        #(1000*1000); // ms
+        fincnt = fincnt+1;
+        $display("%d ms",fincnt+1);
+        if( fincnt>=`SIM_MS ) $finish;
+    end
+end
+
+initial #1000 $finish;
 
 endmodule

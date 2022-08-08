@@ -351,13 +351,19 @@ func dump_qip( all []string, args Args, do_target bool ) {
 	}
 }
 
-func dump_sim( all []string, args Args, do_target bool ) {
+func dump_sim( all []string, args Args, do_target, noclobber bool ) {
 	fname := get_output_name(args)+".f"
 	if do_target {
 		fname = "target.f"
 	}
+	flag := os.O_CREATE|os.O_WRONLY
+	if noclobber {
+		flag = flag | os.O_APPEND
+	} else {
+		flag = flag | os.O_TRUNC
+	}
 
-	fout, err := os.Create(fname)
+	fout, err := os.OpenFile(fname, flag, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -380,7 +386,7 @@ func dump_sim( all []string, args Args, do_target bool ) {
 	}
 }
 
-func parse_one( path string, dump2target bool, skip []string, args Args ) (uniq []string) {
+func parse_one( path string, dump2target, noclobber bool, skip []string, args Args ) (uniq []string) {
 	var files JTFiles
 	if !dump2target {
 		parse_yaml( get_filename(args), &files )
@@ -402,7 +408,7 @@ func parse_one( path string, dump2target bool, skip []string, args Args ) (uniq 
 	}
 	switch( args.Format ) {
 		case "qip": dump_qip(uniq, args, dump2target )
-		default: dump_sim(uniq, args, dump2target )
+		default: dump_sim(uniq, args, dump2target, noclobber )
 	}
 	return uniq
 }
@@ -411,13 +417,13 @@ func main() {
 	parse_args(&args)
 	CWD,_ = os.Getwd()
 
-	game_files := parse_one( os.Getenv("JTFRAME")+"/hdl/jtframe.yaml", false, nil, args )
+	game_files := parse_one( os.Getenv("JTFRAME")+"/hdl/jtframe.yaml", false, false, nil, args )
 
 	if( args.Target!="" ) {
-		target_files := parse_one( os.Getenv("JTFRAME")+"/target/"+args.Target+"/target.yaml", true, game_files, args )
+		target_files := parse_one( os.Getenv("JTFRAME")+"/target/"+args.Target+"/target.yaml", true, false, game_files, args )
 		if args.Format =="sim" {
 			all_files := append( target_files, game_files... )
-			parse_one( os.Getenv("JTFRAME")+"/target/"+args.Target+"/sim.yaml", true, all_files, args )
+			parse_one( os.Getenv("JTFRAME")+"/target/"+args.Target+"/sim.yaml", true, true, all_files, args )
 		}
 	}
 }

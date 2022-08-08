@@ -16,7 +16,7 @@
     Version: 1.0
     Date: 7-8-2021 */
 
-module pocket_test;
+module test;
 
 wire vblank;
 wire clk_74a, clk_74b;
@@ -30,7 +30,8 @@ wire sdram_nwe,  sdram_ncas,
 wire        bridge_spimosi, bridge_spimiso,
             bridge_spiclk, bridge_spiss, bridge_1wire;
 
-wire [11:0] scal_vid, scal_clk, scal_de, scal_skip, scal_vs,
+wire [11:0] scal_vid;
+wire        scal_clk, scal_de, scal_skip, scal_vs,
             scal_hs, scal_audmclk, scal_audadc, scal_auddac, scal_audlrck;
 
 test_harness u_harness(
@@ -90,7 +91,7 @@ apf_top UUT(
     .dram_dq        ( sdram_dq          ),
     .dram_a         ( sdram_a           ),
     .dram_dqm       ( sdram_dqm         ),
-    .dram_nwe       ( sdram_nwe         ),
+    .dram_we_n      ( sdram_nwe         ),
     .dram_cas_n     ( sdram_ncas        ),
     .dram_ras_n     ( sdram_nras        ),
     .dram_ba        ( sdram_ba          ),

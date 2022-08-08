@@ -2,6 +2,8 @@ jtframe:
   - from: ver
     get:
       - jtframe_romrq_rdy_check.v
+      - fast_pll.v
+      - mt48lc16m16a2.v
 target:
   - from: pocket
     get:
