@@ -60,7 +60,20 @@ var args Args
 
 func parse_args( args *Args ) {
 	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "%s, part of JTFRAME. (c) Jose Tejada 2021.\nUsage:\n", os.Args[0])
+		fmt.Fprintf(flag.CommandLine.Output(), "%s, part of JTFRAME. (c) Jose Tejada 2021-2022.\nUsage:\n", os.Args[0])
+		fmt.Fprint( flag.CommandLine.Output(),
+`    jtfiles look for three yaml files:
+		- game.yaml, in the core folder
+		- target.yaml, in $JTFRAME/target
+		- sim.yaml, in $JTFRAME/target (when simulation output requested)
+
+	 Each yaml file can call other files. The game.yaml file should avoid
+	 files specific to a target. That's the only file that a JTFRAME user
+	 should populate.
+	 The files target.yaml and sim.yaml are part of JTFRAME and should not
+	 be modified, except for adding support to new devices.
+
+`)
 		flag.PrintDefaults()
 		os.Exit(0)
 	}
@@ -367,43 +380,44 @@ func dump_sim( all []string, args Args, do_target bool ) {
 	}
 }
 
+func parse_one( path string, dump2target bool, skip []string, args Args ) (uniq []string) {
+	var files JTFiles
+	if !dump2target {
+		parse_yaml( get_filename(args), &files )
+	}
+	parse_yaml( path, &files )
+	all := collect_files(files, args.Rel)
+	// Remove files that could have appeared in the game section
+	for _,s := range(all) {
+		found := false
+		for _, s2 := range(skip) {
+			if s==s2 {
+				found = true
+				break
+			}
+		}
+		if !found {
+			uniq = append( uniq, s )
+		}
+	}
+	switch( args.Format ) {
+		case "qip": dump_qip(uniq, args, dump2target )
+		default: dump_sim(uniq, args, dump2target )
+	}
+	return uniq
+}
+
 func main() {
 	parse_args(&args)
 	CWD,_ = os.Getwd()
 
-	var files JTFiles
-	parse_yaml( get_filename(args), &files )
-	if args.Corename!="" {
-		parse_yaml( os.Getenv("JTFRAME")+"/hdl/jtframe.yaml", &files )
-	}
-	all := collect_files(files, args.Rel)
-
-	switch( args.Format ) {
-		case "qip": dump_qip(all, args, false )
-		default: dump_sim(all, args, false )
-	}
+	game_files := parse_one( os.Getenv("JTFRAME")+"/hdl/jtframe.yaml", false, nil, args )
 
 	if( args.Target!="" ) {
-		var target_files JTFiles
-		parse_yaml( os.Getenv("JTFRAME")+"/target/"+args.Target+"/target.yaml", &target_files )
-		target_all := collect_files(target_files, args.Rel)
-		// Remove files that could have appeared in the game section
-		uniq := make([]string,0)
-		for _,s := range(target_all) {
-			found := false
-			for _, s2 := range(all) {
-				if s==s2 {
-					found = true
-					break
-				}
-			}
-			if !found {
-				uniq = append( uniq, s )
-			}
-		}
-		switch( args.Format ) {
-			case "qip": dump_qip(uniq, args, true )
-			default: dump_sim(uniq, args, true )
+		target_files := parse_one( os.Getenv("JTFRAME")+"/target/"+args.Target+"/target.yaml", true, game_files, args )
+		if args.Format =="sim" {
+			all_files := append( target_files, game_files... )
+			parse_one( os.Getenv("JTFRAME")+"/target/"+args.Target+"/sim.yaml", true, all_files, args )
 		}
 	}
 }
