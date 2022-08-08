@@ -221,6 +221,10 @@ jtframe_pocket_base #(
     .bridge_wr      ( bridge_wr     ),
     .bridge_wr_data ( bridge_wr_data),
     .bridge_endian_little(bridge_endian_little),
+    // audio
+    .audio_mclk     ( audio_mclk    ),
+    .audio_dac      ( audio_dac     ),
+    .audio_lrck     ( audio_lrck    ),
     // Scan-doubler video
     .scan2x_r       ( scan2x_r      ),
     .scan2x_g       ( scan2x_g      ),

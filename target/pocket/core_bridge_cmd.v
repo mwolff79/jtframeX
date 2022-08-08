@@ -169,8 +169,8 @@ always @(posedge clk) begin
     end
 
     if(bridge_wr) begin
-        casex(bridge_addr)
-        32'hF8xx00xx: begin
+        casez(bridge_addr)
+        32'hF8??00??: begin
             case(bridge_addr[7:0])
             8'h0: begin
                 host_0 <= bridge_wr_data_in; // command/status
@@ -187,7 +187,7 @@ always @(posedge clk) begin
             8'h2C: host_2C <= bridge_wr_data_in;
             endcase
         end
-        32'hF8xx10xx: begin
+        32'hF8??10??: begin
             case(bridge_addr[7:0])
             8'h0: target_0 <= bridge_wr_data_in; // command/status
             8'h4: target_4 <= bridge_wr_data_in; // parameter data pointer
@@ -198,11 +198,12 @@ always @(posedge clk) begin
             8'h4C: target_4C <= bridge_wr_data_in;
             endcase
         end
+        default:;
         endcase
     end 
     if(bridge_rd) begin
-        casex(bridge_addr)
-        32'hF8xx00xx: begin
+        casez(bridge_addr)
+        32'hF8??00??: begin
             case(bridge_addr[7:0])
             8'h0: bridge_rd_data_out <= host_0; // command/status
             8'h4: bridge_rd_data_out <= host_4; // parameter data pointer
@@ -213,7 +214,7 @@ always @(posedge clk) begin
             8'h4C: bridge_rd_data_out <= host_4C;
             endcase
         end
-        32'hF8xx10xx: begin
+        32'hF8??10??: begin
             case(bridge_addr[7:0])
             8'h0: bridge_rd_data_out <= target_0;
             8'h4: bridge_rd_data_out <= target_4;
@@ -224,6 +225,7 @@ always @(posedge clk) begin
             8'h2C: bridge_rd_data_out <= target_2C;
             endcase
         end
+        default:;
         endcase
     end
 

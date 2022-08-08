@@ -119,7 +119,7 @@ assign bridge_endian_little = 0;
 
 // Convert Pocket inputs to JTFRAME standard
 function [31:0] joyconv( input [15:0] joy_in );
-    joyconv[31:14] = { 18'd0,
+    joyconv = { 18'd0,
         joy_in[13:4], joy_in[0], joy_in[1], joy_in[2], joy_in[3] };
 endfunction
 
@@ -202,7 +202,7 @@ core_bridge_cmd u_bridge (
 
     .bridge_addr                ( bridge_addr               ),
     .bridge_rd                  ( 1'b0                      ),
-    .bridge_rd_data             (                           ),
+    .bridge_rd_data             ( bridge_rd_data            ),
     .bridge_wr                  ( bridge_wr                 ),
     .bridge_wr_data             ( bridge_wr_data            ),
     .bridge_endian_little       ( bridge_endian_little      ),
@@ -260,5 +260,8 @@ jtframe_pocket_video u_video(
     .pck_vs         ( pck_vs        ),
     .pck_hs         ( pck_hs        )
 );
+
+assign audio_dac  = 0;
+assign audio_lrck = 0;
 
 endmodule

@@ -17,6 +17,7 @@ type Origin int
 const (
 	GAME Origin = iota
 	FRAME
+	TARGET
 	MODULE
 	JTMODULE
 )
@@ -29,12 +30,13 @@ type FileList struct {
 
 type JTModule struct {
 	Name string `yaml:"name"`
-	Unless string `yaml:"unless"`
+	Unless string `yaml:"unless"` // will be compared against env. variables and target argument
 }
 
 type JTFiles struct {
 	Game [] FileList `yaml:"game"`
 	JTFrame [] FileList `yaml:"jtframe"`
+	Target  [] FileList `yaml:"target"`
 	Modules struct {
 		JT [] JTModule `yaml:"jt"`
 		Other [] FileList `yaml:"other"`
@@ -54,6 +56,7 @@ type Args struct {
 
 var parsed []string
 var CWD string
+var args Args
 
 func parse_args( args *Args ) {
 	flag.Usage = func() {
@@ -65,7 +68,7 @@ func parse_args( args *Args ) {
 	flag.StringVar(&args.Parse,"parse","","File to parse. Use either -parse or -core")
 	flag.StringVar(&args.Output,"output","","Output file name with no extension. Default is 'game'")
 	flag.StringVar(&args.Format,"f","qip","Output format. Valid values: qip, sim")
-	flag.StringVar(&args.Target,"target","","Target platform: mist or mister")
+	flag.StringVar(&args.Target,"target","","Target platform: mist, mister, pocket, etc.")
 	flag.BoolVar(&args.Rel,"rel",false,"Output relative paths")
 	flag.BoolVar(&args.SkipVHDL,"novhdl",false,"Skip VHDL files")
 	flag.Parse()
@@ -103,6 +106,9 @@ func append_filelist( dest *[]FileList, src []FileList, other *[]string, origin 
 			if exists {
 				continue
 			}
+			if strings.ToLower(each.Unless) == strings.ToLower(args.Target) {
+				continue
+			}
 		}
 		var newfl FileList
 		newfl.From = each.From
@@ -114,6 +120,7 @@ func append_filelist( dest *[]FileList, src []FileList, other *[]string, origin 
 				switch origin {
 					case GAME: path = os.Getenv("CORES")+"/"+newfl.From+"/hdl/"
 					case FRAME: path = os.Getenv("JTFRAME")+"/hdl/"+newfl.From+"/"
+					case TARGET: path = os.Getenv("JTFRAME")+"/target/"+newfl.From+"/"
 					default: path = os.Getenv("MODULES")+"/"
 				}
 				*other = append( *other, path+each )
@@ -170,6 +177,7 @@ func parse_yaml( filename string, files *JTFiles ) {
 	// Parse
 	append_filelist( &files.Game, aux.Game, &other, GAME )
 	append_filelist( &files.JTFrame, aux.JTFrame, &other, FRAME )
+	append_filelist( &files.Target, aux.Target, &other, TARGET )
 	append_filelist( &files.Modules.Other, aux.Modules.Other, &other, MODULE )
 	if files.Modules.JT==nil {
 		files.Modules.JT = make( []JTModule, 0 )
@@ -225,6 +233,7 @@ func dump_filelist( fl []FileList, all *[]string, origin Origin, rel bool ) {
 		switch( origin ) {
 			case GAME: path=filepath.Join(os.Getenv("CORES"),each.From,"hdl")
 			case FRAME: path=filepath.Join(os.Getenv("JTFRAME"),"hdl",each.From)
+			case TARGET: path=filepath.Join(os.Getenv("JTFRAME"),"target",each.From)
 			case MODULE: path=filepath.Join(os.Getenv("MODULES"),each.From)
 			default: path=os.Getenv("JTROOT")
 		}
@@ -255,6 +264,7 @@ func collect_files( files JTFiles, rel bool ) []string {
 	all := make([]string,0)
 	dump_filelist( files.Game, &all, GAME, rel )
 	dump_filelist( files.JTFrame, &all, FRAME, rel )
+	dump_filelist( files.Target, &all, TARGET, rel )
 	dump_jtmodules( files.Modules.JT, &all, rel )
 	dump_filelist( files.Modules.Other, &all, MODULE, rel )
 	for _,each := range(files.Here) {
@@ -358,7 +368,6 @@ func dump_sim( all []string, args Args, do_target bool ) {
 }
 
 func main() {
-	var args Args
 	parse_args(&args)
 	CWD,_ = os.Getwd()
 

@@ -10,10 +10,17 @@ create_clock -name bridge_spiclk -period 13.468 [get_ports bridge_spiclk]
 
 # autogenerate PLL clock names for use down below
 derive_pll_clocks
+derive_clock_uncertainty
 
+# This is tDS in the data sheet, setup time, spec is 1.5ns
+set_output_delay -clock dram_clk -max 1.5 \
+    [get_ports {dram_a[*] dram_ba[*] dram_cke dram_dqm[*] \
+                dram_dq[*] dram_ras_n dram_cas_n dram_we_n}]
 
-# io constraints go here
-# 
+# this is tdh in the data sheet, hold time, spec is 0.8ns
+set_output_delay -clock  dram_clk -min -0.8 \
+    [get_ports {dram_a[*] dram_ba[*] dram_cke dram_dqm[*] \
+                dram_dq[*] dram_ras_n dram_cas_n dram_we_n}]
 
 
 # load in user constraints 

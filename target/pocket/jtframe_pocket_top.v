@@ -340,8 +340,8 @@ assign game_led[1] = 1'b0; // Let system LED info go through too
 localparam GAME_BUTTONS=`JTFRAME_BUTTONS;
 
 // Unused Pocket ports
-assign port_ir_tx         = 0;
-assign port_ir_rx_disable = 1;
+assign port_ir_tx              = 0;
+assign port_ir_rx_disable      = 1;
 assign cart_tran_bank3         = 8'hzz;
 assign cart_tran_bank3_dir     = 0;
 assign cart_tran_bank2         = 8'hzz;
@@ -369,6 +369,17 @@ assign sram_oe_n               = 1;
 assign sram_we_n               = 1;
 assign sram_ub_n               = 1;
 assign sram_lb_n               = 1;
+assign cram0_a                 = 0;
+assign cram0_dq                = 0;
+assign cram0_clk               = 0;
+assign cram0_adv_n             = 1;
+assign cram0_cre               = 0;
+assign cram0_ce0_n             = 1;
+assign cram0_ce1_n             = 1;
+assign cram0_oe_n              = 1;
+assign cram0_we_n              = 1;
+assign cram0_ub_n              = 1;
+assign cram0_lb_n              = 1;
 assign cram1_a                 = 0;
 assign cram1_dq                = 0;
 assign cram1_clk               = 0;
@@ -380,6 +391,7 @@ assign cram1_oe_n              = 1;
 assign cram1_we_n              = 1;
 assign cram1_ub_n              = 1;
 assign cram1_lb_n              = 1;
+assign dbg_tx                  = 0;
 
 jtframe_pocket #(
     .SDRAMW       ( SDRAMW         ),
