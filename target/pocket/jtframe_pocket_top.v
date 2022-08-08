@@ -392,6 +392,9 @@ assign cram1_we_n              = 1;
 assign cram1_ub_n              = 1;
 assign cram1_lb_n              = 1;
 assign dbg_tx                  = 0;
+assign aux_scl                 = 0;
+assign user1                   = 1'bz;
+assign vpll_feed               = 1'bz;
 
 jtframe_pocket #(
     .SDRAMW       ( SDRAMW         ),
@@ -507,8 +510,6 @@ u_frame(
     .rst_n          ( rst_n          ), // unused
     .game_rst       ( game_rst       ),
     .game_rst_n     (                ),
-    // reset forcing signals:
-    .rst_req        ( rst_req        ),
     // Sound from game
     .snd_left       ( snd_left       ),
     .snd_right      ( snd_right      ),

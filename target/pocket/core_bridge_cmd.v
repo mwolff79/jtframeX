@@ -170,62 +170,66 @@ always @(posedge clk) begin
 
     if(bridge_wr) begin
         casez(bridge_addr)
-        32'hF8??00??: begin
-            case(bridge_addr[7:0])
-            8'h0: begin
-                host_0 <= bridge_wr_data_in; // command/status
-                // check for command 
-                if(bridge_wr_data_in[31:16] == 16'h434D) begin
-                    // host wants us to do a command
-                    host_cmd_startval <= bridge_wr_data_in[15:0];
-                    host_cmd_start <= 1;
-                end
+            32'hF8??00??: begin
+                case(bridge_addr[7:0])
+                    8'h0: begin
+                        host_0 <= bridge_wr_data_in; // command/status
+                        // check for command
+                        if(bridge_wr_data_in[31:16] == 16'h434D) begin
+                            // host wants us to do a command
+                            host_cmd_startval <= bridge_wr_data_in[15:0];
+                            host_cmd_start <= 1;
+                        end
+                    end
+                    8'h20: host_20 <= bridge_wr_data_in; // parameter data regs
+                    8'h24: host_24 <= bridge_wr_data_in;
+                    8'h28: host_28 <= bridge_wr_data_in;
+                    8'h2C: host_2C <= bridge_wr_data_in;
+                    default:;
+                endcase
             end
-            8'h20: host_20 <= bridge_wr_data_in; // parameter data regs
-            8'h24: host_24 <= bridge_wr_data_in;
-            8'h28: host_28 <= bridge_wr_data_in;
-            8'h2C: host_2C <= bridge_wr_data_in;
-            endcase
-        end
-        32'hF8??10??: begin
-            case(bridge_addr[7:0])
-            8'h0: target_0 <= bridge_wr_data_in; // command/status
-            8'h4: target_4 <= bridge_wr_data_in; // parameter data pointer
-            8'h8: target_8 <= bridge_wr_data_in; // response data pointer
-            8'h40: target_40 <= bridge_wr_data_in; // response data regs
-            8'h44: target_44 <= bridge_wr_data_in;
-            8'h48: target_48 <= bridge_wr_data_in;
-            8'h4C: target_4C <= bridge_wr_data_in;
-            endcase
-        end
-        default:;
+            32'hF8??10??: begin
+                case(bridge_addr[7:0])
+                    8'h0: target_0 <= bridge_wr_data_in; // command/status
+                    8'h4: target_4 <= bridge_wr_data_in; // parameter data pointer
+                    8'h8: target_8 <= bridge_wr_data_in; // response data pointer
+                    8'h40: target_40 <= bridge_wr_data_in; // response data regs
+                    8'h44: target_44 <= bridge_wr_data_in;
+                    8'h48: target_48 <= bridge_wr_data_in;
+                    8'h4C: target_4C <= bridge_wr_data_in;
+                    default:;
+                endcase
+            end
+            default:;
         endcase
     end 
     if(bridge_rd) begin
         casez(bridge_addr)
-        32'hF8??00??: begin
-            case(bridge_addr[7:0])
-            8'h0: bridge_rd_data_out <= host_0; // command/status
-            8'h4: bridge_rd_data_out <= host_4; // parameter data pointer
-            8'h8: bridge_rd_data_out <= host_8; // response data pointer
-            8'h40: bridge_rd_data_out <= host_40; // response data regs
-            8'h44: bridge_rd_data_out <= host_44;
-            8'h48: bridge_rd_data_out <= host_48;
-            8'h4C: bridge_rd_data_out <= host_4C;
-            endcase
-        end
-        32'hF8??10??: begin
-            case(bridge_addr[7:0])
-            8'h0: bridge_rd_data_out <= target_0;
-            8'h4: bridge_rd_data_out <= target_4;
-            8'h8: bridge_rd_data_out <= target_8;
-            8'h20: bridge_rd_data_out <= target_20; // parameter data regs
-            8'h24: bridge_rd_data_out <= target_24;
-            8'h28: bridge_rd_data_out <= target_28;
-            8'h2C: bridge_rd_data_out <= target_2C;
-            endcase
-        end
-        default:;
+            32'hF8??00??: begin
+                case(bridge_addr[7:0])
+                    8'h0: bridge_rd_data_out <= host_0; // command/status
+                    8'h4: bridge_rd_data_out <= host_4; // parameter data pointer
+                    8'h8: bridge_rd_data_out <= host_8; // response data pointer
+                    8'h40: bridge_rd_data_out <= host_40; // response data regs
+                    8'h44: bridge_rd_data_out <= host_44;
+                    8'h48: bridge_rd_data_out <= host_48;
+                    8'h4C: bridge_rd_data_out <= host_4C;
+                    default:;
+                endcase
+            end
+            32'hF8??10??: begin
+                case(bridge_addr[7:0])
+                    8'h0: bridge_rd_data_out <= target_0;
+                    8'h4: bridge_rd_data_out <= target_4;
+                    8'h8: bridge_rd_data_out <= target_8;
+                    8'h20: bridge_rd_data_out <= target_20; // parameter data regs
+                    8'h24: bridge_rd_data_out <= target_24;
+                    8'h28: bridge_rd_data_out <= target_28;
+                    8'h2C: bridge_rd_data_out <= target_2C;
+                    default:;
+                endcase
+            end
+            default:;
         endcase
     end
 

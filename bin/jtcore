@@ -420,7 +420,10 @@ else
 fi
 
 if [ $TARGET = pocket ]; then
-    quartus_cpf -c ${RBF%.rbf}.sof $RBF
+    if ! quartus_cpf -c ${RBF%.rbf}.sof $RBF > /tmp/pocket.log; then
+        cat /tmp/pocket.log
+        exit 1
+    fi
 fi
 
 if [ ! -e $RBF ]; then

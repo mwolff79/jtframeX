@@ -130,10 +130,10 @@ apf_top UUT(
     .cram0_dq       (                   ),
     .cram0_wait     (                   ),
     .cram0_clk      (                   ),
-    .cram0_adv_n    (                   )
+    .cram0_adv_n    (                   ),
     .cram0_cre      (                   ),
-    .cram0_ce0_n    (                   )
-    .cram0_ce1_n    (                   )
+    .cram0_ce0_n    (                   ),
+    .cram0_ce1_n    (                   ),
     .cram0_oe_n     (                   ),
     .cram0_we_n     (                   ),
     .cram0_ub_n     (                   ),
@@ -143,10 +143,10 @@ apf_top UUT(
     .cram1_dq       (                   ),
     .cram1_wait     (                   ),
     .cram1_clk      (                   ),
-    .cram1_adv_n    (                   )
+    .cram1_adv_n    (                   ),
     .cram1_cre      (                   ),
-    .cram1_ce0_n    (                   )
-    .cram1_ce1_n    (                   )
+    .cram1_ce0_n    (                   ),
+    .cram1_ce1_n    (                   ),
     .cram1_oe_n     (                   ),
     .cram1_we_n     (                   ),
     .cram1_ub_n     (                   ),

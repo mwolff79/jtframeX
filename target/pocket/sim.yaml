@@ -1,0 +1,11 @@
+jtframe:
+  - from: ver
+    get:
+      - jtframe_romrq_rdy_check.v
+target:
+  - from: pocket
+    get:
+      - ver/mf_ddio_bidir_12.v
+      - ver/pocket_pll.v
+      - ver/pocket_test.v
+      - ver/test_harness.v

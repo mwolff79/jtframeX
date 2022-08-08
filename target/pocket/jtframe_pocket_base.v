@@ -151,7 +151,7 @@ wire    [31:0]  datatable_q;
 assign rst_req = ~rst_req_n;
 assign ioctl_index = dataslot_requestwrite_id[7:0];
 
-wire        wr_s;
+wire        wr_s, ds_done, ds_done_s;
 wire [31:0] data_s, addr_s;
 reg  [ 2:0] ioctl_byte;
 reg  [31:0] ioctl_qword;
@@ -171,8 +171,8 @@ jtframe_sync #( .W(1+32+32) )
 u_sync(
     .clk_in     ( clk_74a           ),
     .clk_out    ( clk_rom           ),
-    .raw        ( { bridge_wr, bridge_wr_data, bridge_addr } ),
-    .sync       ( { wr_s, data_s, addr_s }  )
+    .raw        ( { ds_done, bridge_wr, bridge_wr_data, bridge_addr } ),
+    .sync       ( { ds_done_s, wr_s, data_s, addr_s }  )
 );
 
 always @(posedge clk_rom) begin
@@ -191,7 +191,7 @@ always @(posedge clk_rom) begin
         ioctl_qword <= ioctl_qword >> 8;
         ioctl_wr    <= ioctl_byte!= 0;
     end
-    if( dataslot_done ) begin
+    if( ds_done_s ) begin
         downloading <= 0;
     end
 end
@@ -221,7 +221,7 @@ core_bridge_cmd u_bridge (
     .dataslot_requestwrite_ack  ( 1'b1                      ),
     .dataslot_requestwrite_ok   ( 1'b1                      ),
 
-    .dataslot_allcomplete       ( dataslot_done             ),
+    .dataslot_allcomplete       ( ds_done                   ),
 
     .savestate_supported        ( 1'b0                      ),
     .savestate_addr             ( 32'd0                     ),
