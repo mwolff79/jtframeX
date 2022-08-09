@@ -201,7 +201,7 @@ core_bridge_cmd u_bridge (
     .reset_n                    ( rst_req_n                 ),
 
     .bridge_addr                ( bridge_addr               ),
-    .bridge_rd                  ( 1'b0                      ),
+    .bridge_rd                  ( bridge_rd                 ),
     .bridge_rd_data             ( bridge_rd_data            ),
     .bridge_wr                  ( bridge_wr                 ),
     .bridge_wr_data             ( bridge_wr_data            ),

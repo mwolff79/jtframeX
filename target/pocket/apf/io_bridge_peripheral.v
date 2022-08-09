@@ -313,14 +313,14 @@ end
 
 
 //
-// clock domain: phy_spiclk_reg rising edge
+// clock domain: phy_spiclk rising edge
 //
     reg [1:0]   rx_latch_idx;
     reg [7:0]   rx_dat;
     reg [7:0]   rx_byte;    // latched by clk, but upon a synchronized trigger
     reg         rx_byte_done;
     
-always @(posedge phy_spiclk_reg or posedge phy_spiss) begin
+always @(posedge phy_spiclk or posedge phy_spiss) begin
     if(phy_spiss) begin
         // reset 
         rx_byte_done <= 0;

@@ -43,11 +43,11 @@ module test_harness(
     input        scal_auddac,
     input        scal_audlrck,
 
-    inout        bridge_spimosi,
-    inout        bridge_spimiso,
-    inout        bridge_spiclk,
-    output       bridge_spiss,
-    inout        bridge_1wire,
+    inout        brg_spimosi,
+    inout        brg_spimiso,
+    inout        brg_spiclk,
+    output       brg_spiss,
+    inout        brg_1wire,
     // SDRAM
     inout [15:0] sdram_dq,
     input [12:0] sdram_a,
@@ -113,5 +113,56 @@ initial begin
         if( fincnt>=`SIM_MS ) $finish;
     end
 end
+
+// Send SPI commands
+reg [63:0] cmd[0:15];
+
+initial begin
+    cmd[0] = { 32'hf800_0000, }
+end
+
+pocket_spi u_spi(
+    .din        ( spi_din   ),
+    .wr         ( spi_wr    ),
+    .brg_spi    ( { brg_spimosi, brg_spimiso } ),
+    .brg_spiclk ( brg_spiclk),
+    .brg_spiss  ( brg_spiss )
+);
+
+endmodule
+
+module pocket_spi(
+    input   [7:0] din,
+    input         wr,
+    inout   [1:0] brg_spi,
+    inout         brg_spiclk,
+    output reg    brg_spiss=1
+);
+
+    reg       clk, wrl;
+    reg [7:0] data;
+    reg [2:0] cnt;
+
+    initial begin
+        clk=0;
+        forever #500 clk=~clk;
+    end
+
+    assign brg_spiclk = brg_spiss ? 1'bz : clk;
+    assign brg_spi = brg_spiss ? 2'bzz : data[1:0];
+
+    always @(negedge clk) begin
+        wrl <= wr;
+        if( wr && !wrl ) begin
+            brg_spiss <= 0;
+            data <= din;
+            cnt  <= 3'b111;
+        end
+        if( cnt[0] ) begin
+            data <= data>>2;
+        end else begin
+            brg_spiss <= 1;
+        end
+    end
 
 endmodule

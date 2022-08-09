@@ -111,12 +111,12 @@ end
     reg     [15:0]  host_cmd;
     reg     [15:0]  host_resultcode;
     
-localparam  [3:0]   ST_IDLE         = 'd0;
-localparam  [3:0]   ST_PARSE        = 'd1;
-localparam  [3:0]   ST_WORK         = 'd2;
-localparam  [3:0]   ST_DONE_OK      = 'd13;
-localparam  [3:0]   ST_DONE_CODE    = 'd14;
-localparam  [3:0]   ST_DONE_ERR     = 'd15;
+localparam  [3:0]   ST_IDLE         = 0;
+localparam  [3:0]   ST_PARSE        = 1;
+localparam  [3:0]   ST_WORK         = 2;
+localparam  [3:0]   ST_DONE_OK      = 13;
+localparam  [3:0]   ST_DONE_CODE    = 14;
+localparam  [3:0]   ST_DONE_ERR     = 15;
     reg     [3:0]   hstate;
     
 // target
@@ -151,6 +151,7 @@ localparam  [3:0]   TARG_ST_WAITRESULT  = 'd15;
     
 initial begin
     reset_n <= 0;
+    hstate <= ST_IDLE;
     dataslot_requestread <= 0;
     dataslot_requestwrite <= 0;
     dataslot_allcomplete <= 0;
@@ -263,15 +264,15 @@ always @(posedge clk) begin
         case(host_cmd)
         16'h0000: begin
             // Request Status
-            host_resultcode <= 1; // default: booting
-            if(status_boot_done) begin
-                host_resultcode <= 2; // setup
+            host_resultcode <= 2; // default: booting
+            // if(status_boot_done) begin
+            //     host_resultcode <= 2; // setup
                 if(status_setup_done) begin
                     host_resultcode <= 3; // idle
                 end else if(status_running) begin
                     host_resultcode <= 4; // running
                 end 
-            end
+            // end
             hstate <= ST_DONE_CODE;
         end
         16'h0010: begin

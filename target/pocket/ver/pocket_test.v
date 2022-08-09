@@ -27,8 +27,8 @@ wire [ 1:0] sdram_ba, sdram_dqm;
 wire sdram_nwe,  sdram_ncas,
      sdram_nras, sdram_clk,  sdram_cke;
 
-wire        bridge_spimosi, bridge_spimiso,
-            bridge_spiclk, bridge_spiss, bridge_1wire;
+wire        brg_spimosi, brg_spimiso,
+            brg_spiclk, brg_spiss, brg_1wire;
 
 wire [11:0] scal_vid;
 wire        scal_clk, scal_de, scal_skip, scal_vs,
@@ -50,11 +50,11 @@ test_harness u_harness(
     .scal_auddac    ( scal_auddac       ),
     .scal_audlrck   ( scal_audlrck      ),
     // bridge
-    .bridge_spimosi ( bridge_spimosi    ),
-    .bridge_spimiso ( bridge_spimiso    ),
-    .bridge_spiclk  ( bridge_spiclk     ),
-    .bridge_spiss   ( bridge_spiss      ),
-    .bridge_1wire   ( bridge_1wire      ),
+    .brg_spimosi    ( brg_spimosi       ),
+    .brg_spimiso    ( brg_spimiso       ),
+    .brg_spiclk     ( brg_spiclk        ),
+    .brg_spiss      ( brg_spiss         ),
+    .brg_1wire      ( brg_1wire         ),
     // SDRAM
     .sdram_dq       ( sdram_dq          ),
     .sdram_a        ( sdram_a           ),
@@ -82,11 +82,11 @@ apf_top UUT(
     .scal_auddac    ( scal_auddac       ),
     .scal_audlrck   ( scal_audlrck      ),
     // bridge
-    .bridge_spimosi ( bridge_spimosi    ),
-    .bridge_spimiso ( bridge_spimiso    ),
-    .bridge_spiclk  ( bridge_spiclk     ),
-    .bridge_spiss   ( bridge_spiss      ),
-    .bridge_1wire   ( bridge_1wire      ),
+    .bridge_spimosi ( brg_spimosi       ),
+    .bridge_spimiso ( brg_spimiso       ),
+    .bridge_spiclk  ( brg_spiclk        ),
+    .bridge_spiss   ( brg_spiss         ),
+    .bridge_1wire   ( brg_1wire         ),
     // SDRAM interface
     .dram_dq        ( sdram_dq          ),
     .dram_a         ( sdram_a           ),
