@@ -138,7 +138,7 @@ wire         rst_req_n;
 
 // bridge host commands
 // synchronous to clk_74a
-wire         status_boot_done = ~rst; // controlled by the PLL lock signals
+wire         status_boot_done; // controlled by the PLL lock signals
 wire [15:0]  dataslot_requestread_id, dataslot_requestwrite_id;
 wire         dataslot_requestread, dataslot_requestwrite, dataslot_done;
 
@@ -158,6 +158,13 @@ reg  [31:0] ioctl_qword;
 reg         prog_rdyl;
 
 assign ioctl_dout = ioctl_qword[7:0];
+
+jtframe_sync #(.LATCHIN(1)) u_rstsync(
+    .clk_in ( clk_rom           ),
+    .clk_out( clk_74a           ),
+    .raw    ( ~rst              ),
+    .sync   ( status_boot_done  )
+);
 
 always @(posedge clk_rom, posedge rst) begin
     if( rst ) begin

@@ -28,7 +28,7 @@ set_output_delay -clock  dram_clk -min -0.8 \
 
 # JTFRAME specific:
 
-set_false_path -from [get_keepers {io_bridge_peripheral:ibs|pmp_addr[*]}] -to [get_keepers {jtframe_pocket_top:ic|jtframe_pocket:u_frame|jtframe_pocket_base:u_base|jtframe_sync:u_sync|synchronizer[*].s[0]}]
+set_false_path -to [get_keepers {*|jtframe_sync:u_sync|synchronizer[*].s[0]}]
 
 set_false_path -from [get_keepers {io_pad_controller:ipm|cont1_key[*]}] -to [get_keepers {jtframe_pocket_top:ic|jtframe_pocket:u_frame|jtframe_board:u_board|jtframe_inputs:u_inputs|joy1_sync[*]}]
 
@@ -37,8 +37,6 @@ set_false_path -from [get_keepers {io_pad_controller:ipm|cont2_key[*]}] -to [get
 set_false_path -from [get_keepers {io_pad_controller:ipm|cont3_key[*]}] -to [get_keepers {jtframe_pocket_top:ic|jtframe_pocket:u_frame|jtframe_board:u_board|jtframe_inputs:u_inputs|joy3_sync[*]}]
 
 set_false_path -from [get_keepers {io_pad_controller:ipm|cont4_key[*]}] -to [get_keepers {jtframe_pocket_top:ic|jtframe_pocket:u_frame|jtframe_board:u_board|jtframe_inputs:u_inputs|joy4_sync[*]}]
-
-set_false_path -from [get_keepers {io_bridge_peripheral:ibs|pmp_wr_data_latch[*]}] -to [get_keepers {jtframe_pocket_top:ic|jtframe_pocket:u_frame|jtframe_pocket_base:u_base|jtframe_sync:u_sync|synchronizer[*].s[0]}]
 
 set_false_path -from [get_keepers {io_pad_controller:ipm|cont1_key[*]}] -to [get_keepers {jtframe_pocket_top:ic|jtframe_pocket:u_frame|jtframe_board:u_board|jtframe_inputs:u_inputs|game_start[*]}]
 
@@ -58,4 +56,4 @@ set_false_path -from [get_keepers {io_pad_controller:ipm|cont4_key[*]}] -to [get
 
 set_false_path -from [get_keepers {jtframe_pocket_top:ic|jtframe_pocket:u_frame|jtframe_pocket_base:u_base|core_bridge_cmd:u_bridge|reset_n}] -to [get_keepers {jtframe_pocket_top:ic|jtframe_pocket:u_frame|jtframe_board:u_board|jtframe_reset:u_reset|rst_req_sync[0]}]
 
-set_false_path -from [get_keepers {io_bridge_peripheral:ibs|pmp_wr}] -to [get_keepers {jtframe_pocket_top:ic|jtframe_pocket:u_frame|jtframe_pocket_base:u_base|jtframe_sync:u_sync|synchronizer[*].s[0]}]
+
