@@ -128,6 +128,16 @@ synch_3 s03(.i(rx_byte_done), .o(rx_byte_done_s), .clk(clk), .rise(rx_byte_done_
     reg [31:0]   pmp_wr_data_latch;
     reg [31:0]   pmp_rd_data_e; // asynchronous
     reg [31:0]   pmp_rd_data_buf; // buffer the last word for immediate response
+
+// Avoid x's in simulation
+initial begin
+    pmp_addr = 0;
+    pmp_addr_valid = 0;
+    pmp_rd = 0;
+    pmp_wr = 0;
+    pmp_wr_data = 0;
+end
+
 always @(*) begin
     pmp_wr_data <= endian_little_s ? {  pmp_wr_data_latch[7:0], 
                                         pmp_wr_data_latch[15:8], 

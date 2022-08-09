@@ -115,6 +115,22 @@ reg [3:0]   cnt;
 
 assign pad_1wire = pad_1wire_reg;
 
+// Avoid x's in simulation
+initial begin
+    cont1_key   = 0;
+    cont2_key   = 0;
+    cont3_key   = 0;
+    cont4_key   = 0;
+    cont1_joy   = 0;
+    cont2_joy   = 0;
+    cont3_joy   = 0;
+    cont4_joy   = 0;
+    cont1_trig  = 0;
+    cont2_trig  = 0;
+    cont3_trig  = 0;
+    cont4_trig  = 0;
+end
+
 always @(posedge clk) begin
     tx_word_start <= 0;
     

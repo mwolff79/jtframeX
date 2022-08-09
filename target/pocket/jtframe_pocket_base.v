@@ -167,7 +167,7 @@ always @(posedge clk_rom, posedge rst) begin
     end
 end
 
-jtframe_sync #( .W(1+32+32) )
+jtframe_sync #( .W(2+32+32) )
 u_sync(
     .clk_in     ( clk_74a           ),
     .clk_out    ( clk_rom           ),

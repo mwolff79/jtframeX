@@ -61,8 +61,11 @@ module test_harness(
     input        sdram_cke
 );
 
-wire [31:0] frame_cnt;
+reg [31:0] frame_cnt=0;
 integer fincnt;
+
+assign scal_audadc = 0;
+assign bridge_spiss = 0;
 
 initial begin
     clk_74a = 0;
@@ -75,6 +78,14 @@ initial begin
     forever #6.734 clk_74b = ~clk_74b;
 end
 
+always @(posedge scal_vs) begin
+    frame_cnt <= frame_cnt+1;
+end
+
+pocket_dump u_dump(
+    .scal_vs    ( scal_vs   ),
+    .frame_cnt  ( frame_cnt )
+);
 
 mt48lc16m16a2 u_sdram (
     .Dq         ( sdram_dq      ),
@@ -93,15 +104,14 @@ mt48lc16m16a2 u_sdram (
 );
 
 initial begin
-    $display("Simulate for %d ms",`SIM_MS);
+    fincnt=0;
+    $display("Simulate for %0d ms",`SIM_MS);
     forever begin
         #(1000*1000); // ms
         fincnt = fincnt+1;
-        $display("%d ms",fincnt+1);
+        $display("%d ms",fincnt);
         if( fincnt>=`SIM_MS ) $finish;
     end
 end
-
-initial #1000 $finish;
 
 endmodule
