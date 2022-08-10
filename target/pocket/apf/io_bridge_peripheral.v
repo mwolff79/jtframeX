@@ -315,26 +315,28 @@ end
 //
 // clock domain: phy_spiclk rising edge
 //
-    reg [1:0]   rx_latch_idx;
-    reg [7:0]   rx_dat;
-    reg [7:0]   rx_byte;    // latched by clk, but upon a synchronized trigger
-    reg         rx_byte_done;
+reg  [1:0] rx_latch_idx = 0;
+reg  [7:0] rx_dat       = 0;
+reg  [7:0] rx_byte      = 0;    // latched by clk, but upon a synchronized trigger
+reg        rx_byte_done = 0;
     
 always @(posedge phy_spiclk or posedge phy_spiss) begin
     if(phy_spiss) begin
         // reset 
         rx_byte_done <= 0;
         rx_latch_idx <= 0;
+        rx_byte      <= 0;
+        rx_dat       <= 0;
     end else begin
         // spiclk rising edge, latch data
         rx_byte_done <= 0;
         case(rx_latch_idx)
-            0: begin rx_dat[7:6] <= {phy_spimosi_reg, phy_spimiso_reg}; rx_latch_idx <= 1;   end
-            1: begin rx_dat[5:4] <= {phy_spimosi_reg, phy_spimiso_reg}; rx_latch_idx <= 2;   end
-            2: begin rx_dat[3:2] <= {phy_spimosi_reg, phy_spimiso_reg}; rx_latch_idx <= 3;   end
+            0: begin rx_dat[7:6] <= {phy_spimosi, phy_spimiso}; rx_latch_idx <= 1;   end
+            1: begin rx_dat[5:4] <= {phy_spimosi, phy_spimiso}; rx_latch_idx <= 2;   end
+            2: begin rx_dat[3:2] <= {phy_spimosi, phy_spimiso}; rx_latch_idx <= 3;   end
             3: begin
                 // last bit of the byte
-                rx_byte <= {rx_dat[7:2], phy_spimosi_reg, phy_spimiso_reg};
+                rx_byte <= {rx_dat[7:2], phy_spimosi, phy_spimiso};
                 rx_latch_idx <= 0;
                 rx_byte_done <= 1;
             end

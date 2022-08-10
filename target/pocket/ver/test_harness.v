@@ -46,7 +46,7 @@ module test_harness(
     inout        brg_spimosi,
     inout        brg_spimiso,
     inout        brg_spiclk,
-    output       brg_spiss,
+    output reg   brg_spiss=1,
     inout        brg_1wire,
     // SDRAM
     inout [15:0] sdram_dq,
@@ -116,52 +116,87 @@ end
 
 // Send SPI commands
 reg [63:0] cmd[0:15];
+reg        clk_spi;
+reg        spi_idlel, spi_wr;
+reg        wait_startup, brg_drive;
+integer    spi_cnt=0;
+reg  [2:0] spi_idx=0;
+wire [7:0] spi_din;
+wire [1:0] spi_data;
+wire       spi_idle;
+
+assign spi_din    = cmd[spi_cnt][ 31-spi_idx*8 -: 8 ];
+assign brg_spiclk = brg_drive ?  ~clk_spi : 1'bz;
+assign { brg_spimosi, brg_spimiso } = brg_drive ? spi_data[1:0] :  2'bzz;
 
 initial begin
-    cmd[0] = { 32'hf800_0000, }
+    wait_startup = 1;
+    #10_000 wait_startup = 0;
+end
+
+initial begin
+    clk_spi=0;
+    forever #500 clk_spi=~clk_spi;
+end
+
+initial begin // last address bit sets write (1) or read (0)
+    cmd[0] = { 32'hf800_0000, 32'h0 }; // request status
+end
+
+always @(negedge clk_spi) begin
+    spi_idlel <= spi_idle ;
+    spi_wr    <= 0;
+    if( spi_idle  && spi_idlel ) begin
+        spi_wr    <= 1;
+        brg_spiss <= 0;
+        brg_drive <= 1;
+    end
+    if( spi_idle  && !spi_idlel ) begin
+        spi_idx   <= spi_idx+3'd1;
+        brg_spiss <= spi_idx==3;
+    end
+    if( brg_spiss ) brg_drive <= 0;
 end
 
 pocket_spi u_spi(
-    .din        ( spi_din   ),
+    .clk        ( clk_spi   ),
     .wr         ( spi_wr    ),
-    .brg_spi    ( { brg_spimosi, brg_spimiso } ),
-    .brg_spiclk ( brg_spiclk),
-    .brg_spiss  ( brg_spiss )
+    .din        ( spi_din   ),
+    .dout       ( spi_data  ),
+    .idle       ( spi_idle  )
 );
 
 endmodule
 
+/////////////////////////////////////////////////////////
+
 module pocket_spi(
+    input         clk, // slow clock
     input   [7:0] din,
     input         wr,
-    inout   [1:0] brg_spi,
-    inout         brg_spiclk,
-    output reg    brg_spiss=1
+    inout   [1:0] dout,
+    output reg    idle=1
 );
 
-    reg       clk, wrl;
+    reg       wrl=0;
     reg [7:0] data;
-    reg [2:0] cnt;
+    reg [2:0] cnt=0;
 
-    initial begin
-        clk=0;
-        forever #500 clk=~clk;
-    end
+    assign dout = data[1:0];
 
-    assign brg_spiclk = brg_spiss ? 1'bz : clk;
-    assign brg_spi = brg_spiss ? 2'bzz : data[1:0];
-
-    always @(negedge clk) begin
+    always @(posedge clk) begin
         wrl <= wr;
         if( wr && !wrl ) begin
-            brg_spiss <= 0;
+            idle <= 0;
             data <= din;
             cnt  <= 3'b111;
-        end
-        if( cnt[0] ) begin
-            data <= data>>2;
         end else begin
-            brg_spiss <= 1;
+            if( cnt[0] ) begin
+                data <= data>>2;
+                cnt  <= cnt>>1;
+            end else begin
+                idle <= 1;
+            end
         end
     end
 
