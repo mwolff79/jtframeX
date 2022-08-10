@@ -115,19 +115,19 @@ initial begin
 end
 
 // Send SPI commands
-reg [63:0] cmd[0:15];
-reg        clk_spi;
-reg        spi_idlel, spi_wr;
-reg        wait_startup, brg_drive;
-integer    spi_cnt=0;
-reg  [2:0] spi_idx=0;
-wire [7:0] spi_din;
-wire [1:0] spi_data;
-wire       spi_idle;
+reg [ 63:0] cmd[0:15];
+reg         clk_spi;
+reg         spi_idlel, spi_wr;
+reg         wait_startup, spi_cen=0;
+integer     spi_cnt=0;
+reg  [ 2:0] st=0;
+wire [63:0] spi_din;
+wire [ 1:0] spi_data;
+wire        spi_idle;
 
-assign spi_din    = cmd[spi_cnt][ 31-spi_idx*8 -: 8 ];
-assign brg_spiclk = brg_drive ?  ~clk_spi : 1'bz;
-assign { brg_spimosi, brg_spimiso } = brg_drive ? spi_data[1:0] :  2'bzz;
+assign spi_din    = cmd[spi_cnt];
+assign brg_spiclk = spi_cen ?  ~clk_spi : 1'bz;
+assign { brg_spimiso, brg_spimosi } = !brg_spiss ? spi_data[1:0] :  2'bzz;
 
 initial begin
     wait_startup = 1;
@@ -143,19 +143,25 @@ initial begin // last address bit sets write (1) or read (0)
     cmd[0] = { 32'hf800_0000, 32'h0 }; // request status
 end
 
-always @(negedge clk_spi) begin
-    spi_idlel <= spi_idle ;
-    spi_wr    <= 0;
-    if( spi_idle  && spi_idlel ) begin
-        spi_wr    <= 1;
-        brg_spiss <= 0;
-        brg_drive <= 1;
-    end
-    if( spi_idle  && !spi_idlel ) begin
-        spi_idx   <= spi_idx+3'd1;
-        brg_spiss <= spi_idx==3;
-    end
-    if( brg_spiss ) brg_drive <= 0;
+always @(posedge clk_spi) begin
+    if( !wait_startup && st!=7 ) st <= st + 3'd1;
+    spi_wr <= 0;
+    case( st )
+        0: if( !spi_idle ) st <= st;
+        1: brg_spiss <= 0;
+        2: begin
+            spi_wr <= 1;
+            spi_cen <= 1;
+        end
+        5:  if( !spi_idle ) begin
+            st <= st;
+            spi_cen <= ~spi_idle;
+        end
+        6: begin
+            brg_spiss <= 1;
+            st <= 7;
+        end
+    endcase
 end
 
 pocket_spi u_spi(
@@ -163,6 +169,7 @@ pocket_spi u_spi(
     .wr         ( spi_wr    ),
     .din        ( spi_din   ),
     .dout       ( spi_data  ),
+    .rding      (           ),
     .idle       ( spi_idle  )
 );
 
@@ -172,28 +179,33 @@ endmodule
 
 module pocket_spi(
     input         clk, // slow clock
-    input   [7:0] din,
+    input  [63:0] din,
     input         wr,
     inout   [1:0] dout,
+    output        rding,
     output reg    idle=1
 );
 
-    reg       wrl=0;
-    reg [7:0] data;
-    reg [2:0] cnt=0;
+    reg        wrl=0;
+    reg [63:0] data;
+    reg [ 4:0] cnt=0;
+    reg        is_rd;
 
-    assign dout = data[1:0];
+    assign rding = (is_rd && cnt<15);
+    assign dout = rding ? 2'bzz : data[1:0];
 
     always @(posedge clk) begin
         wrl <= wr;
+        if( idle ) data <= 0;
         if( wr && !wrl ) begin
             idle <= 0;
-            data <= din;
-            cnt  <= 3'b111;
+            data <= din[0] ? din : {32'd0,din[63:32]};
+            cnt  <= 31;
+            is_rd <= ~din[0];
         end else begin
-            if( cnt[0] ) begin
+            if( cnt > 0 ) begin
                 data <= data>>2;
-                cnt  <= cnt>>1;
+                cnt  <= cnt-5'd1;
             end else begin
                 idle <= 1;
             end
