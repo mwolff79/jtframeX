@@ -94,28 +94,63 @@ module jtframe_dual_ram_cen #(parameter dw=8, aw=10,
     input   [dw-1:0] data0,
     input   [aw-1:0] addr0,
     input   we0,
-    output reg [dw-1:0] q0,
+    output [dw-1:0] q0,
     // Port 1
     input   [dw-1:0] data1,
     input   [aw-1:0] addr1,
     input   we1,
-    output reg [dw-1:0] q1
+    output [dw-1:0] q1
     `ifdef JTFRAME_DUAL_RAM_DUMP
     ,input dump
     `endif
 );
 
-(* ramstyle = "no_rw_check" *) reg [dw-1:0] mem[0:(2**aw)-1];
+`ifdef SIMULATION
+localparam SIMULATION=1;
+`else
+localparam SIMULATION=0;
+`endif
 
-always @(posedge clk0) if(cen0) begin
-    q0 <= mem[addr0];
-    if(we0) mem[addr0] <= data0;
-end
+`ifdef POCKET
+localparam POCKET=1;
+`else
+localparam POCKET=0;
+`endif
 
-always @(posedge clk1) if(cen1) begin
-    q1 <= mem[addr1];
-    if(we1) mem[addr1] <= data1;
-end
+generate
+    if( !SIMULATION && POCKET && aw<13 )
+            jtframe_pocket_dualram u_primitive(
+                .address_a( addr0   ),
+                .address_b( addr1   ),
+                .clock_a  ( clk0    ),
+                .clock_b  ( clk1    ),
+                .data_a   ( data0   ),
+                .data_b   ( data1   ),
+                .enable_a ( cen0    ),
+                .enable_b ( cen1    ),
+                .wren_a   ( we0     ),
+                .wren_b   ( we1     ),
+                .q_a      ( q0      ),
+                .q_b      ( q1      )
+            );
+
+        else begin
+            reg [dw-1:0] qq0, qq1;
+            (* ramstyle = "no_rw_check" *) reg [dw-1:0] mem[0:(2**aw)-1];
+
+            assign { q0, q1 } = { qq0, qq1 };
+
+            always @(posedge clk0) if(cen0) begin
+                qq0 <= mem[addr0];
+                if(we0) mem[addr0] <= data0;
+            end
+
+            always @(posedge clk1) if(cen1) begin
+                qq1 <= mem[addr1];
+                if(we1) mem[addr1] <= data1;
+            end
+        end
+endgenerate
 
 /* verilator lint_off WIDTH */
 `ifdef SIMULATION

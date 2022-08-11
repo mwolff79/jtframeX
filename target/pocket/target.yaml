@@ -24,3 +24,4 @@ target:
     - apf/io_bridge_peripheral.v
     - apf/io_pad_controller.v
     - apf/mf_ddio_bidir_12.qip
+    - ram/jtframe_pocket_dualram.v
