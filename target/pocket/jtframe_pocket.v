@@ -182,7 +182,7 @@ wire          ps2_kbd_clk, ps2_kbd_data;
 wire          osd_shown;
 
 wire [ 7:0]   scan2x_r, scan2x_g, scan2x_b;
-wire          scan2x_hs, scan2x_vs, scan2x_clk;
+wire          scan2x_hs, scan2x_vs, scan2x_clk, scan2x_de;
 wire [ 6:0]   core_mod;
 wire [ 3:0]   but_start, but_coin;
 
@@ -194,6 +194,10 @@ wire  [15:0]  board_left, board_right;
 wire  [ 8:0]  bd_mouse_dx, bd_mouse_dy;
 wire          bd_mouse_st, bd_mouse_idx;
 wire  [ 7:0]  bd_mouse_f;
+
+wire [3*COLORW-1:0] base_rgb;
+wire base_LHBL, base_LVBL;
+
 
 assign board_status = { {64-DIPBASE{1'b0}}, status[DIPBASE-1:0] };
 assign paddle_1 = 0;
@@ -225,13 +229,12 @@ jtframe_pocket_base #(
     .audio_mclk     ( audio_mclk    ),
     .audio_dac      ( audio_dac     ),
     .audio_lrck     ( audio_lrck    ),
-    // Scan-doubler video
-    .scan2x_r       ( scan2x_r      ),
-    .scan2x_g       ( scan2x_g      ),
-    .scan2x_b       ( scan2x_b      ),
-    .scan2x_hs      ( scan2x_hs     ),
-    .scan2x_vs      ( scan2x_vs     ),
-    .scan2x_clk     ( scan2x_clk    ),
+    // Video after OSD, credits and debugger
+    .base_rgb       ( base_rgb      ),
+    .base_LHBL      ( base_LHBL     ),
+    .base_LVBL      ( base_LVBL     ),
+    .base_hs        ( hs            ),
+    .base_vs        ( vs            ),
     // MiST VGA pins (includes OSD)
     .pck_rgb        ( pck_rgb       ),
     .pck_rgb_clk    ( pck_rgb_clk   ),
@@ -421,6 +424,10 @@ jtframe_board #(
     .vs             ( vs              ),
     .pxl_cen        ( pxl_cen         ),
     .pxl2_cen       ( pxl2_cen        ),
+    // Video after OSD, credits and debugger
+    .base_rgb       ( base_rgb        ),
+    .base_LHBL      ( base_LHBL       ),
+    .base_LVBL      ( base_LVBL       ),
     // Scan-doubler video
     .scan2x_r       ( scan2x_r        ),
     .scan2x_g       ( scan2x_g        ),
@@ -429,6 +436,7 @@ jtframe_board #(
     .scan2x_vs      ( scan2x_vs       ),
     .scan2x_enb     ( 1'b1            ),    // no scan doubler
     .scan2x_clk     ( scan2x_clk      ),
+    .scan2x_de      ( scan2x_de       ),
     // Debug
     .gfx_en         ( gfx_en          ),
     .debug_bus      ( debug_bus       ),
@@ -439,7 +447,6 @@ jtframe_board #(
     .hdmi_arx       (                 ),
     .hdmi_ary       (                 ),
     .scan2x_cen     (                 ),
-    .scan2x_de      (                 ),
     .scan2x_sl      (                 )
 );
 

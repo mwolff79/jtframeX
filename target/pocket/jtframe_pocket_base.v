@@ -40,13 +40,11 @@ module jtframe_pocket_base #(parameter
     input  [31:0]   bridge_wr_data,
     output          bridge_endian_little,
     // Scan-doubler video
-    input   [7:0]   scan2x_r,
-    input   [7:0]   scan2x_g,
-    input   [7:0]   scan2x_b,
-    input           scan2x_hs,
-    input           scan2x_vs,
-    input           scan2x_clk,
-    input           scan2x_de,
+    input [3*COLORW-1:0] base_rgb,
+    input           base_LHBL,
+    input           base_LVBL,
+    input           base_hs,
+    input           base_vs,
     // Final video
     output  [23:0]  pck_rgb,
     output          pck_rgb_clk,
@@ -138,7 +136,8 @@ wire         rst_req_n;
 
 // bridge host commands
 // synchronous to clk_74a
-wire         status_boot_done; // controlled by the PLL lock signals
+wire         boot_done,  // controlled by the PLL lock signals
+             setup_done; // controlled by SDRAM init signal
 wire [15:0]  dataslot_requestread_id, dataslot_requestwrite_id;
 wire         dataslot_requestread, dataslot_requestwrite, dataslot_done;
 
@@ -149,7 +148,6 @@ wire    [31:0]  datatable_data;
 wire    [31:0]  datatable_q;
 
 assign rst_req = ~rst_req_n;
-assign ioctl_index = dataslot_requestwrite_id[7:0];
 
 wire        wr_s, ds_done, ds_done_s;
 wire [31:0] data_s, addr_s;
@@ -159,11 +157,11 @@ reg         prog_rdyl;
 
 assign ioctl_dout = ioctl_qword[7:0];
 
-jtframe_sync #(.LATCHIN(1)) u_rstsync(
+jtframe_sync #(.LATCHIN(1),.W(2)) u_rstsync(
     .clk_in ( clk_rom           ),
     .clk_out( clk_74a           ),
-    .raw    ( ~rst              ),
-    .sync   ( status_boot_done  )
+    .raw    ( {~sdram_init, ~rst } ),
+    .sync   ( {setup_done, boot_done }  )
 );
 
 always @(posedge clk_rom, posedge rst) begin
@@ -174,31 +172,33 @@ always @(posedge clk_rom, posedge rst) begin
     end
 end
 
-jtframe_sync #( .W(2+32+32) )
+jtframe_sync #( .W(8+2+32+32) )
 u_sync(
     .clk_in     ( clk_74a           ),
     .clk_out    ( clk_rom           ),
-    .raw        ( { ds_done, bridge_wr, bridge_wr_data, bridge_addr } ),
-    .sync       ( { ds_done_s, wr_s, data_s, addr_s }  )
+    .raw        ( { dataslot_requestwrite_id[7:0], ds_done, bridge_wr, bridge_wr_data, bridge_addr } ),
+    .sync       ( { ioctl_index, ds_done_s, wr_s, data_s, addr_s }  )
 );
 
 always @(posedge clk_rom) begin
     prog_rdyl <= prog_rdy;
     ioctl_wr  <= 0;
-    if( wr_s && addr_s[31:24]!=8'hf8 ) begin
-        ioctl_byte  <= 3'd1;
-        ioctl_wr    <= 1;
-        ioctl_qword <= data_s;
-        downloading <= 1;
-        ioctl_addr  <= { addr_s[22:0], 2'd0 };
+    if( ioctl_index==0 && addr_s[31:24]!=8'hf8 ) begin
+        if( wr_s ) begin
+            ioctl_byte  <= 3'd1;
+            ioctl_wr    <= 1;
+            ioctl_qword <= data_s;
+            downloading <= 1;
+            ioctl_addr  <= addr_s[24:0];
+        end
+        if( prog_rdyl ) begin
+            ioctl_addr[1:0] <= ioctl_addr[1:0] + 1'd1;
+            ioctl_byte      <= ioctl_byte  << 1;
+            ioctl_qword     <= ioctl_qword >> 8;
+            ioctl_wr        <= ioctl_byte!= 0;
+        end
     end
-    if( prog_rdyl ) begin
-        ioctl_addr[1:0] <= ioctl_addr[1:0] + 1'd1;
-        ioctl_byte  <= ioctl_byte  << 1;
-        ioctl_qword <= ioctl_qword >> 8;
-        ioctl_wr    <= ioctl_byte!= 0;
-    end
-    if( ds_done_s ) begin
+    if( ds_done_s || ioctl_index!=0 ) begin
         downloading <= 0;
     end
 end
@@ -214,9 +214,9 @@ core_bridge_cmd u_bridge (
     .bridge_wr_data             ( bridge_wr_data            ),
     .bridge_endian_little       ( bridge_endian_little      ),
 
-    .status_boot_done           ( status_boot_done          ),
-    .status_setup_done          ( status_boot_done          ),
-    .status_running             ( rst_req_n                 ),
+    .status_boot_done           ( boot_done                 ),
+    .status_setup_done          ( setup_done                ),
+    .status_running             ( setup_done                ),
 
     .dataslot_requestread       ( dataslot_requestread      ),
     .dataslot_requestread_id    ( dataslot_requestread_id   ),
@@ -249,15 +249,14 @@ core_bridge_cmd u_bridge (
 );
 
 jtframe_pocket_video u_video(
-    .clk            ( scan2x_clk    ),
+    .clk            ( clk_sys       ),
     .pxl2_cen       ( pxl2_cen      ),
     // Scan-doubler video
-    .scan2x_r       ( scan2x_r      ),
-    .scan2x_g       ( scan2x_g      ),
-    .scan2x_b       ( scan2x_b      ),
-    .scan2x_hs      ( scan2x_hs     ),
-    .scan2x_vs      ( scan2x_vs     ),
-    .scan2x_de      ( scan2x_de     ),
+    .base_rgb       ( base_rgb      ),
+    .base_hs        ( base_hs       ),
+    .base_vs        ( base_vs       ),
+    .base_LHBL      ( base_LHBL     ),
+    .base_LVBL      ( base_LVBL     ),
     // Final video
     .pck_rgb        ( pck_rgb       ),
     .pck_rgb_clk    ( pck_rgb_clk   ),

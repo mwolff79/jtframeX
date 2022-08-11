@@ -95,7 +95,6 @@ synch_3 s02(phy_spiss, phy_spiss_s, clk, phy_spiss_r, phy_spiss_f);
     localparam  ST_WRITE_0      = 'd6;  
     localparam  ST_WRITE_1      = 'd7;  
     localparam  ST_WRITE_2      = 'd8;  
-    localparam  ST_WRITE_3      = 'd9;  
     localparam  ST_ADDR_0       = 'd9;
     
     reg [1:0]   addr_cnt;
@@ -173,7 +172,6 @@ always @(posedge clk) begin
     end
     ST_ADDR_0: begin
         // transaction has started
-
         if(rx_byte_done_r_2) begin
             case(addr_cnt)
             0: pmp_addr[31:24] <= rx_byte_2;
@@ -191,7 +189,6 @@ always @(posedge clk) begin
                 end
             end
             endcase
-            
             addr_cnt <= addr_cnt + 1'b1;
         end
     end

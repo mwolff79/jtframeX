@@ -309,33 +309,29 @@ io_pad_controller ipm (
     
     
 // virtual pmp bridge
-    wire            bridge_endian_little;
-    wire    [31:0]  bridge_addr;
-    wire            bridge_rd;
-    wire    [31:0]  bridge_rd_data;
-    wire            bridge_wr;
-    wire    [31:0]  bridge_wr_data;
+wire [31:0] bridge_addr, bridge_rd_data, bridge_wr_data;
+wire        bridge_endian_little,
+            bridge_rd, bridge_wr;
 
 io_bridge_peripheral ibs (
-
     .clk            ( clk_74a ),
     .reset_n        ( reset_n ),
     
     .endian_little  ( bridge_endian_little ),
     
-    .pmp_addr       ( bridge_addr ),
-    .pmp_rd         ( bridge_rd ),
+    .pmp_addr       ( bridge_addr    ),
+    .pmp_rd         ( bridge_rd      ),
     .pmp_rd_data    ( bridge_rd_data ),
-    .pmp_wr         ( bridge_wr ),
+    .pmp_wr         ( bridge_wr      ),
     .pmp_wr_data    ( bridge_wr_data ),
+    .pmp_addr_valid (                ),
 
     .phy_spimosi    ( bridge_spimosi ),
     .phy_spimiso    ( bridge_spimiso ),
-    .phy_spiclk     ( bridge_spiclk ),
-    .phy_spiss      ( bridge_spiss )
+    .phy_spiclk     ( bridge_spiclk  ),
+    .phy_spiss      ( bridge_spiss   )
 
 );
-
 
 ///////////////////////////////////////////////////
 // instantiate the user core top-level

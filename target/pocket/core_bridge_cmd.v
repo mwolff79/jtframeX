@@ -175,7 +175,7 @@ always @(posedge clk) begin
                 case(bridge_addr[7:0])
                     8'h0: begin
                         host_0 <= bridge_wr_data_in; // command/status
-                        // check for command
+                        // check for command: 434D = Command Word
                         if(bridge_wr_data_in[31:16] == 16'h434D) begin
                             // host wants us to do a command
                             host_cmd_startval <= bridge_wr_data_in[15:0];
@@ -265,14 +265,14 @@ always @(posedge clk) begin
         16'h0000: begin
             // Request Status
             host_resultcode <= 2; // default: booting
-            // if(status_boot_done) begin
-            //     host_resultcode <= 2; // setup
+            if(status_boot_done) begin
+                host_resultcode <= 2; // setup
                 if(status_setup_done) begin
                     host_resultcode <= 3; // idle
                 end else if(status_running) begin
                     host_resultcode <= 4; // running
                 end 
-            // end
+            end
             hstate <= ST_DONE_CODE;
         end
         16'h0010: begin

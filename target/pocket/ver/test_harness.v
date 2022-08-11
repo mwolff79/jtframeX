@@ -105,9 +105,9 @@ mt48lc16m16a2 u_sdram (
 
 initial begin
     fincnt=0;
-    $display("Simulate for %0d ms",`SIM_MS);
+    $display("Simulate for %0d us",`SIM_MS*100);
     forever begin
-        #(1000*1000); // ms
+        #(100*1000); // 0.1ms
         fincnt = fincnt+1;
         $display("%d ms",fincnt);
         if( fincnt>=`SIM_MS ) $finish;
@@ -123,24 +123,24 @@ integer     spi_cnt=0;
 reg  [ 2:0] st=0;
 wire [63:0] spi_din;
 wire [ 1:0] spi_data;
-wire        spi_idle;
+wire        spi_idle, rding;
 
 assign spi_din    = cmd[spi_cnt];
-assign brg_spiclk = spi_cen ?  ~clk_spi : 1'bz;
-assign { brg_spimiso, brg_spimosi } = !brg_spiss ? spi_data[1:0] :  2'bzz;
+assign brg_spiclk = (spi_cen & ~rding) ?  ~clk_spi : 1'bz;
+assign { brg_spimosi, brg_spimiso } = (!brg_spiss && !rding) ? spi_data[1:0] :  2'bzz;
+assign clk_spi = clk_74b;
+
+pulldown( brg_spiclk  );
+pulldown( brg_spimiso );
+pulldown( brg_spimosi );
 
 initial begin
     wait_startup = 1;
     #10_000 wait_startup = 0;
 end
 
-initial begin
-    clk_spi=0;
-    forever #500 clk_spi=~clk_spi;
-end
-
 initial begin // last address bit sets write (1) or read (0)
-    cmd[0] = { 32'hf800_0000, 32'h0 }; // request status
+    cmd[0] = { 32'hf800_0001, 32'h0 }; // request status
 end
 
 always @(posedge clk_spi) begin
@@ -148,16 +148,19 @@ always @(posedge clk_spi) begin
     spi_wr <= 0;
     case( st )
         0: if( !spi_idle ) st <= st;
-        1: brg_spiss <= 0;
         2: begin
             spi_wr <= 1;
+        end
+        3: begin
+            brg_spiss <= 0;
             spi_cen <= 1;
         end
         5:  if( !spi_idle ) begin
             st <= st;
-            spi_cen <= ~spi_idle;
+        end else begin
+            spi_cen <= 0;
         end
-        6: begin
+        7: begin
             brg_spiss <= 1;
             st <= 7;
         end
@@ -169,7 +172,7 @@ pocket_spi u_spi(
     .wr         ( spi_wr    ),
     .din        ( spi_din   ),
     .dout       ( spi_data  ),
-    .rding      (           ),
+    .rding      ( rding     ),
     .idle       ( spi_idle  )
 );
 
@@ -189,22 +192,24 @@ module pocket_spi(
     reg        wrl=0;
     reg [63:0] data;
     reg [ 4:0] cnt=0;
-    reg        is_rd;
+    reg        is_rd=0;
 
-    assign rding = (is_rd && cnt<15);
-    assign dout = rding ? 2'bzz : data[1:0];
+    assign rding = (!idle && is_rd && cnt<16);
+    assign dout = rding ? 2'bzz : data[63:62];
 
     always @(posedge clk) begin
         wrl <= wr;
-        if( idle ) data <= 0;
+        if( idle ) begin
+            data  <= 0;
+        end
         if( wr && !wrl ) begin
             idle <= 0;
-            data <= din[0] ? din : {32'd0,din[63:32]};
+            data <= din[0] ? din : {din[63:32], 32'd0};
             cnt  <= 31;
-            is_rd <= ~din[0];
+            is_rd <= ~din[32];
         end else begin
             if( cnt > 0 ) begin
-                data <= data>>2;
+                data <= data<<2;
                 cnt  <= cnt-5'd1;
             end else begin
                 idle <= 1;
