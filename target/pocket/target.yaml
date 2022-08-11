@@ -2,6 +2,9 @@ jtframe:
   - from: video
     get:
       - jtframe_logo.v
+  - from: ram
+    get:
+      - jtframe_prom.v
 target:
   - from: mist
     get:

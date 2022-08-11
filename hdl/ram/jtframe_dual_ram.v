@@ -107,53 +107,6 @@ module jtframe_dual_ram_cen #(parameter dw=8, aw=10,
 
 (* ramstyle = "no_rw_check" *) reg [dw-1:0] mem[0:(2**aw)-1];
 
-/* verilator lint_off WIDTH */
-`ifdef SIMULATION
-integer f, readcnt;
-initial begin
-    for( f=0; f<(2**aw)-1;f=f+1) begin
-        mem[f] = 0;
-    end
-    if( simfile != "" ) begin
-        f=$fopen(simfile,"rb");
-        if( f != 0 ) begin
-            readcnt=$fread( mem, f );
-            $display("INFO: Read %14s (%4d bytes/%2d%%) for %m",
-                simfile, readcnt, readcnt*100/(2**aw));
-            if( readcnt != 2**aw )
-                $display("      the memory was not filled by the file data");
-            $fclose(f);
-        end else begin
-            $display("WARNING: %m cannot open file: %s", simfile);
-        end
-        end
-    else begin
-        if( simhexfile != "" ) begin
-            $readmemh(simhexfile,mem);
-            $display("INFO: Read %14s (hex) for %m", simhexfile);
-        end else begin
-            if( synfile!= "" ) begin
-                if( ascii_bin==1 )
-                    $readmemb(synfile,mem);
-                else
-                    $readmemh(synfile,mem);
-                $display("INFO: Read %14s (hex) for %m", synfile);
-            end else
-                for( readcnt=0; readcnt<2**aw; readcnt=readcnt+1 )
-                    mem[readcnt] = {dw{1'b0}};
-        end
-    end
-end
-`else
-// file for synthesis:
-initial if(synfile!="" ) begin
-    if( ascii_bin==1 )
-        $readmemb(synfile,mem);
-    else
-        $readmemh(synfile,mem);
-end
-`endif
-
 always @(posedge clk0) if(cen0) begin
     q0 <= mem[addr0];
     if(we0) mem[addr0] <= data0;
@@ -164,19 +117,67 @@ always @(posedge clk1) if(cen1) begin
     if(we1) mem[addr1] <= data1;
 end
 
-// Content dump for simulation debugging
-`ifdef JTFRAME_DUAL_RAM_DUMP
-integer fdump=0, dumpcnt;
+/* verilator lint_off WIDTH */
+`ifdef SIMULATION
+    // Content dump for simulation debugging
+    `ifdef JTFRAME_DUAL_RAM_DUMP
+        integer fdump=0, dumpcnt;
 
-always @(posedge dump) begin
-    $display("INFO: contents dumped to %s", dumpfile );
-    if( fdump==0 )begin
-        fdump=$fopen(dumpfile,"w");
+        always @(posedge dump) begin
+            $display("INFO: contents dumped to %s", dumpfile );
+            if( fdump==0 )begin
+                fdump=$fopen(dumpfile,"w");
+            end
+            for( dumpcnt=0; dumpcnt<2**aw; dumpcnt=dumpcnt+1 )
+                $fdisplay(fdump,"%X", mem[dumpcnt]);
+        end
+    `endif
+
+    integer f, readcnt;
+    initial begin
+        for( f=0; f<(2**aw)-1;f=f+1) begin
+            mem[f] = 0;
+        end
+        if( simfile != "" ) begin
+            f=$fopen(simfile,"rb");
+            if( f != 0 ) begin
+                readcnt=$fread( mem, f );
+                $display("INFO: Read %14s (%4d bytes/%2d%%) for %m",
+                    simfile, readcnt, readcnt*100/(2**aw));
+                if( readcnt != 2**aw )
+                    $display("      the memory was not filled by the file data");
+                $fclose(f);
+            end else begin
+                $display("WARNING: %m cannot open file: %s", simfile);
+            end
+            end
+        else begin
+            if( simhexfile != "" ) begin
+                $readmemh(simhexfile,mem);
+                $display("INFO: Read %14s (hex) for %m", simhexfile);
+            end else begin
+                if( synfile!= "" ) begin
+                    if( ascii_bin==1 )
+                        $readmemb(synfile,mem);
+                    else
+                        $readmemh(synfile,mem);
+                    $display("INFO: Read %14s (hex) for %m", synfile);
+                end else
+                    for( readcnt=0; readcnt<2**aw; readcnt=readcnt+1 )
+                        mem[readcnt] = {dw{1'b0}};
+            end
+        end
     end
-    for( dumpcnt=0; dumpcnt<2**aw; dumpcnt=dumpcnt+1 )
-        $fdisplay(fdump,"%X", mem[dumpcnt]);
-end
+`else
+    // file for synthesis:
+    initial if(synfile!="" ) begin
+        if( ascii_bin==1 )
+            $readmemb(synfile,mem);
+        else
+            $readmemh(synfile,mem);
+    end
 `endif
+
 /* verilator lint_on WIDTH */
 endmodule
 /* verilator lint_on MULTIDRIVEN */
