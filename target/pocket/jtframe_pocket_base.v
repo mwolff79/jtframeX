@@ -25,6 +25,7 @@ module jtframe_pocket_base #(parameter
     input           clk_sys,
     input           clk_rom,
     input           clk_74a,
+    input           pxl_cen,
     input           pxl2_cen,
 
     input           sdram_init,
@@ -248,15 +249,37 @@ core_bridge_cmd u_bridge (
     .savestate_load_err         ( 1'd0                      )
 );
 
+wire [3*COLORW-1:0] logo_rgb;
+wire logo_hs, logo_vs, logo_lhbl, logo_lvbl;
+
+jtframe_logo #(.COLORW(COLORW)) u_logo(
+    .clk        ( clk_sys   ),
+    .pxl_cen    ( pxl_cen   ),
+    .show_en    ( 1'b1      ),
+
+    .rgb_in     ( base_rgb  ),
+    .hs         ( base_hs   ),
+    .vs         ( base_vs   ),
+    .lhbl       ( base_LHBL ),
+    .lvbl       ( base_LVBL ),
+
+    // VGA signals going to video connector
+    .rgb_out    ( logo_rgb  ),
+    .hs_out     ( logo_hs   ),
+    .vs_out     ( logo_vs   ),
+    .lhbl_out   ( logo_lhbl ),
+    .lvbl_out   ( logo_lvbl )
+);
+
 jtframe_pocket_video u_video(
     .clk            ( clk_sys       ),
     .pxl2_cen       ( pxl2_cen      ),
     // Scan-doubler video
-    .base_rgb       ( base_rgb      ),
-    .base_hs        ( base_hs       ),
-    .base_vs        ( base_vs       ),
-    .base_LHBL      ( base_LHBL     ),
-    .base_LVBL      ( base_LVBL     ),
+    .base_rgb       ( logo_rgb      ),
+    .base_hs        ( logo_hs       ),
+    .base_vs        ( logo_vs       ),
+    .base_lhbl      ( logo_lhbl     ),
+    .base_lvbl      ( logo_lvbl     ),
     // Final video
     .pck_rgb        ( pck_rgb       ),
     .pck_rgb_clk    ( pck_rgb_clk   ),

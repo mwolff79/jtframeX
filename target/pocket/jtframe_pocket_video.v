@@ -23,8 +23,8 @@ module jtframe_pocket_video #(parameter
     input             pxl2_cen,
     // Base video
     input [3*COLORW-1:0] base_rgb,
-    input             base_LHBL,
-    input             base_LVBL,
+    input             base_lhbl,
+    input             base_lvbl,
     input             base_hs,
     input             base_vs,
     // Final video
@@ -48,7 +48,7 @@ wire [COLORW-1:0] br,bg,bb;
     always @(posedge pck_rgb_clk) begin
         if( pck_hs ) begin
             hcnt <= 0;
-            if( base_LVBL ) vcnt <= vcnt+1;
+            if( base_lvbl ) vcnt <= vcnt+1;
             if( hcnt!=0 ) htotal <= hcnt;
         end
         if( pck_vs ) begin
@@ -92,9 +92,8 @@ always @(posedge clk) begin
             vsl     <= base_vs;
             pck_hs  <= base_hs & ~hsl;
             pck_vs  <= base_vs & ~vsl;
-            pck_de  <= base_LHBL & base_LVBL;
-            //pck_rgb <= { extend8(br), extend8(bg), extend8(bb) };
-            pck_rgb <= pck_rgb+1'd1;
+            pck_de  <= base_lhbl & base_lvbl;
+            pck_rgb <= { extend8(br), extend8(bg), extend8(bb) };
         end
     end
 end

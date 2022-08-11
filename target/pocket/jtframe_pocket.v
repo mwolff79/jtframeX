@@ -214,6 +214,7 @@ jtframe_pocket_base #(
     .clk_sys        ( clk_sys       ),
     .clk_rom        ( clk_rom       ),
     .clk_74a        ( clk_74a       ),
+    .pxl_cen        ( pxl_cen       ),
     .pxl2_cen       ( pxl2_cen      ),
     .core_mod       ( core_mod      ),
     .osd_shown      ( osd_shown     ),
