@@ -419,13 +419,6 @@ else
     RBF=$PRJPATH/${TARGET}/jt$PRJ.rbf
 fi
 
-if [ $TARGET = pocket ]; then
-    if ! quartus_cpf -c ${RBF%.rbf}.sof $RBF > /tmp/pocket.log; then
-        cat /tmp/pocket.log
-        exit 1
-    fi
-fi
-
 if [ ! -e $RBF ]; then
     echo -e "${rBG}ERROR:${NC}${wBG} file ${red}$RBF${NC}${wBG} does not exist. You need to recompile.${NC}"
     exit 1

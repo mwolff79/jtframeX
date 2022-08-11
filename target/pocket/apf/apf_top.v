@@ -248,27 +248,30 @@ mf_ddio_bidir_12 isco (
 
 wire    [11:0]  scal_ddio_12;
 assign scal_vid = scal_ddio_12;
+wire [7:0] nc, nc2;
+wire [3:0] scal_ddio_ctrl;
 
 mf_ddio_bidir_12 iscc (
     .oe ( 1'b1 ),
-    .datain_h ( {video_vs, video_hs, video_de, video_skip} ),
-    .datain_l ( {video_vs, video_hs, video_de, video_skip} ),
+    .datain_h ( {8'd0, video_vs, video_hs, video_de, video_skip} ),
+    .datain_l ( {nc, video_vs, video_hs, video_de, video_skip} ),
     .outclock ( video_rgb_clock ),
-    .padio ( scal_ddio_ctrl )
+    .padio ( { nc2, scal_ddio_ctrl } )
 );
 
-wire    [3:0]   scal_ddio_ctrl;
 assign scal_vs = scal_ddio_ctrl[3];
 assign scal_hs = scal_ddio_ctrl[2];
 assign scal_de = scal_ddio_ctrl[1];
 assign scal_skip = scal_ddio_ctrl[0];
 
+wire [10:0] nc3;
+
 mf_ddio_bidir_12 isclk(
     .oe ( 1'b1 ),
-    .datain_h ( 1'b1 ),
-    .datain_l ( 1'b0 ),
+    .datain_h ( 12'b1 ),
+    .datain_l ( 12'b0 ),
     .outclock ( video_rgb_clock_90 ),
-    .padio ( scal_clk )
+    .padio ( { nc3, scal_clk } )
 );
 
 

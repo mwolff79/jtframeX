@@ -41,10 +41,32 @@ reg  [3:0] pxl_cnt, pxl_90;
 reg        hsl, vsl;
 wire [COLORW-1:0] br,bg,bb;
 
+`ifdef SIMULATION
+    // counts the active video size
+    integer hcnt=0, vcnt=0, htotal=0, vtotal=0;
+
+    always @(posedge pck_rgb_clk) begin
+        if( pck_hs ) begin
+            hcnt <= 0;
+            if( base_LVBL ) vcnt <= vcnt+1;
+            if( hcnt!=0 ) htotal <= hcnt;
+        end
+        if( pck_vs ) begin
+            vcnt <= 0;
+            vtotal <= vcnt;
+            $display("Pocket video size %0dx%0d",htotal, vtotal==0 ? vcnt : vtotal );
+        end
+        if( pck_de ) hcnt <= hcnt+1;
+    end
+`endif
+
 assign pck_skip = 0;
 assign {br,bg,bb} = base_rgb;
 
-initial pck_rgb_clk = 0;
+initial begin
+    pck_rgb_clk = 0;
+    pck_rgb     = 0;
+end
 
 function [7:0] extend8;
     input [COLORW-1:0] a;
@@ -60,7 +82,7 @@ endfunction
 
 always @(posedge clk) begin
     pxl_cnt <= pxl2_cen ? 4'd0 : pxl_cnt+4'd1;
-    if( pxl_cnt[3:1] == pxl_90[3:1] )
+    if( pxl_cnt == {pxl_90[3:1],1'd0}-4'd1 )
         pck_rgb_clkq <= pck_rgb_clk;
     if(pxl2_cen) begin
         pck_rgb_clk <= ~pck_rgb_clk;
@@ -71,7 +93,8 @@ always @(posedge clk) begin
             pck_hs  <= base_hs & ~hsl;
             pck_vs  <= base_vs & ~vsl;
             pck_de  <= base_LHBL & base_LVBL;
-            pck_rgb <= { extend8(br), extend8(bg), extend8(bb) };
+            //pck_rgb <= { extend8(br), extend8(bg), extend8(bb) };
+            pck_rgb <= pck_rgb+1'd1;
         end
     end
 end

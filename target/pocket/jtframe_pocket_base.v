@@ -111,7 +111,7 @@ wire        ioctl_download, ioctl_upload;
 
 assign ioctl_ram   = 0;
 assign ioctl_cheat = 0;
-assign osd_shown   = 0;
+assign osd_shown   = 1;
 assign status      = 0;
 assign bridge_endian_little = 0;
 
