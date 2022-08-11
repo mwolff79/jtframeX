@@ -35,10 +35,15 @@ module jtframe_logo #(parameter
     // VGA signals going to video connector
     output [3*COLORW-1:0] rgb_out,
 
-    output reg       hs_out,
-    output reg       vs_out,
-    output reg       lhbl_out,
-    output reg       lvbl_out
+    // Logo download
+    input [10:0] prog_addr,
+    input [ 7:0] prog_data,
+    input        prog_we,
+
+    output reg   hs_out,
+    output reg   vs_out,
+    output reg   lhbl_out,
+    output reg   lvbl_out
 );
 
 reg  [ 8:0] hcnt=0,vcnt=0, htot=9'd256, vtot=9'd256;
@@ -50,13 +55,13 @@ wire [COLORW-1:0] r_in, g_in, b_in;
 reg  [COLORW-1:0] r_out, g_out, b_out;
 
 
-jtframe_prom #(.synhex("jtframe_logo.hex"),.aw(11)) u_rom(
+jtframe_prom #(/*.synhex("jtframe_logo.hex"),*/.aw(11)) u_rom(
     .clk    ( clk    ),
     .cen    ( 1'b1   ),
-    .data   ( 8'd0   ),
+    .data   ( prog_data   ),
     .rd_addr( addr   ),
-    .wr_addr( 11'd0  ),
-    .we     ( 1'b0   ),
+    .wr_addr( prog_addr ),
+    .we     ( prog_we   ),
     .q      ( rom    )
 );
 

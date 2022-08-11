@@ -114,7 +114,7 @@ assign ioctl_ram   = 0;
 assign ioctl_cheat = 0;
 assign osd_shown   = 1;
 assign status      = 0;
-assign bridge_endian_little = 0;
+assign bridge_endian_little = 1;
 
 // Convert Pocket inputs to JTFRAME standard
 function [31:0] joyconv( input [15:0] joy_in );
@@ -255,13 +255,17 @@ wire logo_hs, logo_vs, logo_lhbl, logo_lvbl;
 jtframe_logo #(.COLORW(COLORW)) u_logo(
     .clk        ( clk_sys   ),
     .pxl_cen    ( pxl_cen   ),
-    .show_en    ( 1'b1      ),
+    .show_en    ( downloading ),
 
     .rgb_in     ( base_rgb  ),
     .hs         ( base_hs   ),
     .vs         ( base_vs   ),
     .lhbl       ( base_LHBL ),
     .lvbl       ( base_LVBL ),
+
+    .prog_addr  ( ioctl_addr[10:0] ),
+    .prog_data  ( ioctl_dout),
+    .prog_we    ( ioctl_wr && ioctl_addr<25'h800 && ioctl_index==0 ),
 
     // VGA signals going to video connector
     .rgb_out    ( logo_rgb  ),
