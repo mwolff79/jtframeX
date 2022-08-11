@@ -149,69 +149,69 @@ generate
                 qq1 <= mem[addr1];
                 if(we1) mem[addr1] <= data1;
             end
-        end
-endgenerate
 
-/* verilator lint_off WIDTH */
-`ifdef SIMULATION
-    // Content dump for simulation debugging
-    `ifdef JTFRAME_DUAL_RAM_DUMP
-        integer fdump=0, dumpcnt;
+            /* verilator lint_off WIDTH */
+            `ifdef SIMULATION
+                // Content dump for simulation debugging
+                `ifdef JTFRAME_DUAL_RAM_DUMP
+                    integer fdump=0, dumpcnt;
 
-        always @(posedge dump) begin
-            $display("INFO: contents dumped to %s", dumpfile );
-            if( fdump==0 )begin
-                fdump=$fopen(dumpfile,"w");
-            end
-            for( dumpcnt=0; dumpcnt<2**aw; dumpcnt=dumpcnt+1 )
-                $fdisplay(fdump,"%X", mem[dumpcnt]);
-        end
-    `endif
+                    always @(posedge dump) begin
+                        $display("INFO: contents dumped to %s", dumpfile );
+                        if( fdump==0 )begin
+                            fdump=$fopen(dumpfile,"w");
+                        end
+                        for( dumpcnt=0; dumpcnt<2**aw; dumpcnt=dumpcnt+1 )
+                            $fdisplay(fdump,"%X", mem[dumpcnt]);
+                    end
+                `endif
 
-    integer f, readcnt;
-    initial begin
-        for( f=0; f<(2**aw)-1;f=f+1) begin
-            mem[f] = 0;
-        end
-        if( simfile != "" ) begin
-            f=$fopen(simfile,"rb");
-            if( f != 0 ) begin
-                readcnt=$fread( mem, f );
-                $display("INFO: Read %14s (%4d bytes/%2d%%) for %m",
-                    simfile, readcnt, readcnt*100/(2**aw));
-                if( readcnt != 2**aw )
-                    $display("      the memory was not filled by the file data");
-                $fclose(f);
-            end else begin
-                $display("WARNING: %m cannot open file: %s", simfile);
-            end
-            end
-        else begin
-            if( simhexfile != "" ) begin
-                $readmemh(simhexfile,mem);
-                $display("INFO: Read %14s (hex) for %m", simhexfile);
-            end else begin
-                if( synfile!= "" ) begin
+                integer f, readcnt;
+                initial begin
+                    for( f=0; f<(2**aw)-1;f=f+1) begin
+                        mem[f] = 0;
+                    end
+                    if( simfile != "" ) begin
+                        f=$fopen(simfile,"rb");
+                        if( f != 0 ) begin
+                            readcnt=$fread( mem, f );
+                            $display("INFO: Read %14s (%4d bytes/%2d%%) for %m",
+                                simfile, readcnt, readcnt*100/(2**aw));
+                            if( readcnt != 2**aw )
+                                $display("      the memory was not filled by the file data");
+                            $fclose(f);
+                        end else begin
+                            $display("WARNING: %m cannot open file: %s", simfile);
+                        end
+                        end
+                    else begin
+                        if( simhexfile != "" ) begin
+                            $readmemh(simhexfile,mem);
+                            $display("INFO: Read %14s (hex) for %m", simhexfile);
+                        end else begin
+                            if( synfile!= "" ) begin
+                                if( ascii_bin==1 )
+                                    $readmemb(synfile,mem);
+                                else
+                                    $readmemh(synfile,mem);
+                                $display("INFO: Read %14s (hex) for %m", synfile);
+                            end else
+                                for( readcnt=0; readcnt<2**aw; readcnt=readcnt+1 )
+                                    mem[readcnt] = {dw{1'b0}};
+                        end
+                    end
+                end
+            `else
+                // file for synthesis:
+                initial if(synfile!="" ) begin
                     if( ascii_bin==1 )
                         $readmemb(synfile,mem);
                     else
                         $readmemh(synfile,mem);
-                    $display("INFO: Read %14s (hex) for %m", synfile);
-                end else
-                    for( readcnt=0; readcnt<2**aw; readcnt=readcnt+1 )
-                        mem[readcnt] = {dw{1'b0}};
-            end
+                end
+            `endif
         end
-    end
-`else
-    // file for synthesis:
-    initial if(synfile!="" ) begin
-        if( ascii_bin==1 )
-            $readmemb(synfile,mem);
-        else
-            $readmemh(synfile,mem);
-    end
-`endif
+endgenerate
 
 /* verilator lint_on WIDTH */
 endmodule

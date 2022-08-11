@@ -44,14 +44,13 @@ module jtframe_logo #(parameter
 reg  [ 8:0] hcnt=0,vcnt=0, htot=9'd256, vtot=9'd256;
 reg         hsl, vsl;
 wire [10:0] addr;
-reg  [ 7:0] char;
 wire [ 7:0] rom;
 wire        pxl;
 wire [COLORW-1:0] r_in, g_in, b_in;
 reg  [COLORW-1:0] r_out, g_out, b_out;
 
 
-jtframe_prom #(.synhex("jtframe_logo.hex")) u_rom(
+jtframe_prom #(.synhex("jtframe_logo.hex"),.aw(11)) u_rom(
     .clk    ( clk    ),
     .cen    ( 1'b1   ),
     .data   ( 8'd0   ),
@@ -61,8 +60,8 @@ jtframe_prom #(.synhex("jtframe_logo.hex")) u_rom(
     .q      ( rom    )
 );
 
-assign addr = { vcnt[7:5], hcnt[7:0] };
-assign pxl  = char[ vcnt[4:2] ];
+assign addr = { vcnt[6:4], hcnt[7:0] };
+assign pxl  = rom[ vcnt[3:1] ];
 assign {r_in,g_in,b_in} = rgb_in;
 assign rgb_out = { r_out, g_out, b_out };
 
@@ -82,19 +81,15 @@ end
 always @(posedge clk) if( pxl_cen ) begin
     hsl <= hs;
     vsl <= vs;
-    hcnt <= hcnt + 9'd1;
+    hcnt <= lhbl ? hcnt + 9'd1 : 9'd0;
     if( hs & ~hsl ) begin
         htot <= hcnt;
         hcnt <= 0;
-        if( lvbl ) vcnt <= vcnt+9'd1;
+        vcnt <= lvbl ? vcnt+9'd1 : 9'd0;
     end
     if( vs && !vsl && vcnt!=0 ) begin
         vtot <= vcnt;
     end
-end
-
-always @(posedge clk) begin
-    char <= rom[addr];
 end
 
 endmodule
