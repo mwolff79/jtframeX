@@ -140,7 +140,8 @@ initial begin
 end
 
 initial begin // last address bit sets write (1) or read (0)
-    cmd[0] = { 32'hf800_0001, 32'h0 }; // request status
+    //cmd[0] = { 32'hf800_0001, 32'h0 }; // request status
+    cmd[0] = { 32'h0800_0001, 32'h12345678 }; // request status
 end
 
 always @(posedge clk_spi) begin

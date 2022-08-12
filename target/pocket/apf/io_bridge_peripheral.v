@@ -137,14 +137,14 @@ initial begin
     pmp_wr_data = 0;
 end
 
-always @(*) begin
-    pmp_wr_data <= endian_little_s ? {  pmp_wr_data_latch[7:0], 
+always @* begin
+    pmp_wr_data = endian_little_s ? {  pmp_wr_data_latch[7:0],
                                         pmp_wr_data_latch[15:8], 
                                         pmp_wr_data_latch[23:16], 
                                         pmp_wr_data_latch[31:24]
                                     } : pmp_wr_data_latch;
                                 
-    pmp_rd_data_e <= endian_little_s ? {pmp_rd_data[7:0], 
+    pmp_rd_data_e = endian_little_s ? {pmp_rd_data[7:0],
                                         pmp_rd_data[15:8], 
                                         pmp_rd_data[23:16], 
                                         pmp_rd_data[31:24]

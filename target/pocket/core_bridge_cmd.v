@@ -403,23 +403,5 @@ always @(posedge clk) begin
     
 
 end
-/*
-    wire    [31:0]  b_datatable_q;
-    reg     [9:0]   b_datatable_addr;
-    reg             b_datatable_wren;
-
-mf_datatable idt (
-    .address_a      ( datatable_addr ),
-    .address_b      ( b_datatable_addr ),
-    .clock_a        ( clk ),
-    .clock_b        ( clk ),
-    .data_a         ( datatable_data ),
-    .data_b         ( bridge_wr_data_in ),
-    .wren_a         ( datatable_wren ),
-    .wren_b         ( b_datatable_wren ),
-    .q_a            ( datatable_q ),
-    .q_b            ( b_datatable_q )
-);
-*/
 
 endmodule

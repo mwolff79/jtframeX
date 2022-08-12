@@ -152,7 +152,6 @@ assign rst_req = ~rst_req_n;
 
 wire        wr_s, ds_done, ds_done_s;
 wire [31:0] data_s, addr_s;
-// reg  [ 2:0] ioctl_byte;
 reg  [31:0] ioctl_qword;
 reg         prog_rdyl;
 
@@ -195,19 +194,25 @@ reg aux;
 always @(posedge clk_rom) begin
     prog_rdyl <= prog_rdy;
     ioctl_wr  <= 0;
+    aux <= ~aux;
     if( ioctl_index==0 && addr_s[31:24]!=8'hf8 ) begin
         if( wr_s ) begin
-            // ioctl_byte  <= 3'd1;
             ioctl_wr    <= 1;
-            ioctl_qword <= data_s;
+            //ioctl_qword <= data_s;
+            ioctl_qword <= {4{
+                addr_s[9:8]==0 ? data_s[31:24] :
+                addr_s[9:8]==1 ? data_s[23:16] :
+                addr_s[9:8]==2 ? data_s[15: 8] :
+                data_s[ 7: 0]
+            }};
+            //ioctl_qword <= { 8'hff, data_s[23:0]};
             downloading <= 1;
             ioctl_addr  <= {addr_s[24:2],2'd0};
             aux <= 0;
         end else if( ioctl_addr[1:0] != 3 ) begin //if( prog_rdyl ) begin
             ioctl_addr[1:0] <= ioctl_addr[1:0] + 2'd1;
-            // ioctl_byte      <= ioctl_byte  << 1;
             ioctl_qword     <= ioctl_qword >> 8;
-            ioctl_wr        <= 1; // ioctl_byte!= 0;
+            ioctl_wr        <= 1;
         end
     end
     if( ds_done_s || ioctl_index!=0 ) begin
