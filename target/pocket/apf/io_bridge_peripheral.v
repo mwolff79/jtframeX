@@ -313,7 +313,7 @@ end
 // clock domain: phy_spiclk rising edge
 //
 reg  [1:0] rx_latch_idx = 0;
-reg  [7:0] rx_dat       = 0;
+reg  [7:2] rx_dat       = 0;
 reg  [7:0] rx_byte      = 0;    // latched by clk, but upon a synchronized trigger
 reg        rx_byte_done = 0;
     

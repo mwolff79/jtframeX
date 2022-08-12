@@ -114,7 +114,7 @@ assign ioctl_ram   = 0;
 assign ioctl_cheat = 0;
 assign osd_shown   = 1;
 assign status      = 0;
-assign bridge_endian_little = 1;
+assign bridge_endian_little = 0;
 
 // Convert Pocket inputs to JTFRAME standard
 function [31:0] joyconv( input [15:0] joy_in );
@@ -155,7 +155,7 @@ wire [31:0] data_s, addr_s;
 reg  [31:0] ioctl_qword;
 reg         prog_rdyl;
 
-assign ioctl_dout = ioctl_qword[7:0];
+assign ioctl_dout = bridge_endian_little ? ioctl_qword[7:0] : ioctl_qword[31:24];
 
 jtframe_sync #(.LATCHIN(1),.W(2)) u_rstsync(
     .clk_in ( clk_rom           ),
@@ -179,10 +179,11 @@ jtframe_crossclk_strobe #(2) u_cross(
     .stout      ( wr_s      )
 );
 
-jtframe_sync #( .W(8+1+32+32) )
+jtframe_sync_cen #( .W(8+1+32+32),.LATCHIN(1) )
 u_sync(
     .clk_in     ( clk_74a           ),
     .clk_out    ( clk_rom           ),
+    .cen        ( bridge_wr         ),
     .raw        ( { dataslot_requestwrite_id[7:0], ds_done,
                     bridge_wr_data, bridge_addr } ),
     .sync       ( { ioctl_index, ds_done_s,
@@ -195,25 +196,28 @@ always @(posedge clk_rom) begin
     prog_rdyl <= prog_rdy;
     ioctl_wr  <= 0;
     aux <= ~aux;
-    if( ioctl_index==0 && addr_s[31:24]!=8'hf8 ) begin
-        if( wr_s ) begin
-            ioctl_wr    <= 1;
-            //ioctl_qword <= data_s;
-            ioctl_qword <= {4{
-                addr_s[9:8]==0 ? data_s[31:24] :
-                addr_s[9:8]==1 ? data_s[23:16] :
-                addr_s[9:8]==2 ? data_s[15: 8] :
-                data_s[ 7: 0]
-            }};
-            //ioctl_qword <= { 8'hff, data_s[23:0]};
-            downloading <= 1;
-            ioctl_addr  <= {addr_s[24:2],2'd0};
-            aux <= 0;
-        end else if( ioctl_addr[1:0] != 3 ) begin //if( prog_rdyl ) begin
-            ioctl_addr[1:0] <= ioctl_addr[1:0] + 2'd1;
-            ioctl_qword     <= ioctl_qword >> 8;
-            ioctl_wr        <= 1;
-        end
+    if( wr_s && ioctl_index==0 && addr_s[31:24]!=8'hf8 ) begin
+        ioctl_wr    <= 1;
+        ioctl_qword <= data_s;
+        // ioctl_qword <= {4{
+        //     addr_s[9:8]==0 ? data_s[31:24] :
+        //     addr_s[9:8]==1 ? data_s[23:16] :
+        //     addr_s[9:8]==2 ? data_s[15: 8] :
+        //     data_s[ 7: 0]
+        // }};
+        //ioctl_qword <= { 8'hff, data_s[23:0]}; // ok with endian=1
+        //ioctl_qword <= { data_s[31:8], 8'hff }; // ok with endian=0
+        ioctl_qword <= { data_s[31:4], 4'hf }; // ok with endian=0
+        // ioctl_qword <= { data_s[31:8], {8{~ioctl_wr}} }; // shows that ioctl_wr was low when next wr came
+        // ioctl_qword <= { data_s[31:8], {8{!ioctl_wr && ioctl_addr[1:0] == 3}} }; // shows that the process was over
+        downloading <= 1;
+        ioctl_addr  <= {addr_s[24:2],2'd0};
+        aux <= 0;
+    end else if( ioctl_addr[1:0] != 3 ) begin //if( prog_rdyl ) begin
+        ioctl_addr[1:0] <= ioctl_addr[1:0] + 2'd1;
+        ioctl_qword     <= bridge_endian_little ? ioctl_qword >> 8 :
+                                                  ioctl_qword << 8;
+        ioctl_wr        <= 1;
     end
     if( ds_done_s || ioctl_index!=0 ) begin
         downloading <= 0;
