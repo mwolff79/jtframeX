@@ -152,7 +152,7 @@ assign rst_req = ~rst_req_n;
 
 wire        wr_s, ds_done, ds_done_s;
 wire [31:0] data_s, addr_s;
-reg  [ 2:0] ioctl_byte;
+// reg  [ 2:0] ioctl_byte;
 reg  [31:0] ioctl_qword;
 reg         prog_rdyl;
 
@@ -173,30 +173,41 @@ always @(posedge clk_rom, posedge rst) begin
     end
 end
 
-jtframe_sync #( .W(8+2+32+32) )
+jtframe_crossclk_strobe #(2) u_cross(
+    .clk_in     ( clk_74a   ),
+    .clk_out    ( clk_rom   ),
+    .stin       ( bridge_wr ),
+    .stout      ( wr_s      )
+);
+
+jtframe_sync #( .W(8+1+32+32) )
 u_sync(
     .clk_in     ( clk_74a           ),
     .clk_out    ( clk_rom           ),
-    .raw        ( { dataslot_requestwrite_id[7:0], ds_done, bridge_wr, bridge_wr_data, bridge_addr } ),
-    .sync       ( { ioctl_index, ds_done_s, wr_s, data_s, addr_s }  )
+    .raw        ( { dataslot_requestwrite_id[7:0], ds_done,
+                    bridge_wr_data, bridge_addr } ),
+    .sync       ( { ioctl_index, ds_done_s,
+                    data_s, addr_s }  )
 );
+
+reg aux;
 
 always @(posedge clk_rom) begin
     prog_rdyl <= prog_rdy;
     ioctl_wr  <= 0;
     if( ioctl_index==0 && addr_s[31:24]!=8'hf8 ) begin
         if( wr_s ) begin
-            ioctl_byte  <= 3'd1;
+            // ioctl_byte  <= 3'd1;
             ioctl_wr    <= 1;
             ioctl_qword <= data_s;
             downloading <= 1;
-            ioctl_addr  <= addr_s[24:0];
-        end
-        if( prog_rdyl ) begin
-            ioctl_addr[1:0] <= ioctl_addr[1:0] + 1'd1;
-            ioctl_byte      <= ioctl_byte  << 1;
+            ioctl_addr  <= {addr_s[24:2],2'd0};
+            aux <= 0;
+        end else if( ioctl_addr[1:0] != 3 ) begin //if( prog_rdyl ) begin
+            ioctl_addr[1:0] <= ioctl_addr[1:0] + 2'd1;
+            // ioctl_byte      <= ioctl_byte  << 1;
             ioctl_qword     <= ioctl_qword >> 8;
-            ioctl_wr        <= ioctl_byte!= 0;
+            ioctl_wr        <= 1; // ioctl_byte!= 0;
         end
     end
     if( ds_done_s || ioctl_index!=0 ) begin

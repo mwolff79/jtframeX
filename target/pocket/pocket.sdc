@@ -28,8 +28,6 @@ set_output_delay -clock  dram_clk -min -0.8 \
 
 # JTFRAME specific:
 
-set_false_path -to [get_keepers {*|jtframe_sync:*|synchronizer[*].s[0]}]
-
 set_false_path -from [get_keepers {io_pad_controller:ipm|cont1_key[*]}] -to [get_keepers {jtframe_pocket_top:ic|jtframe_pocket:u_frame|jtframe_board:u_board|jtframe_inputs:u_inputs|joy1_sync[*]}]
 
 set_false_path -from [get_keepers {io_pad_controller:ipm|cont2_key[*]}] -to [get_keepers {jtframe_pocket_top:ic|jtframe_pocket:u_frame|jtframe_board:u_board|jtframe_inputs:u_inputs|joy2_sync[*]}]
@@ -56,6 +54,9 @@ set_false_path -from [get_keepers {io_pad_controller:ipm|cont4_key[*]}] -to [get
 
 set_false_path -from [get_keepers {jtframe_pocket_top:ic|jtframe_pocket:u_frame|jtframe_pocket_base:u_base|core_bridge_cmd:u_bridge|reset_n}] -to [get_keepers {jtframe_pocket_top:ic|jtframe_pocket:u_frame|jtframe_board:u_board|jtframe_reset:u_reset|rst_req_sync[0]}]
 
-
+# Synchronizers
+set_false_path -to [get_keepers {*|jtframe_sync:*|synchronizer[*].s[0]}]
+set_false_path -to [get_keepers {*|jtframe_crossclk_strobe:*|sclr[*]}]
+set_false_path -to [get_keepers {*|jtframe_crossclk_strobe:*|sset[*]}]
 
 

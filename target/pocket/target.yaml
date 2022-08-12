@@ -5,6 +5,9 @@ jtframe:
   - from: ram
     get:
       - jtframe_prom.v
+  - from: clocking
+    get:
+      - jtframe_crossclk_strobe.v
 target:
   - from: mist
     get:
