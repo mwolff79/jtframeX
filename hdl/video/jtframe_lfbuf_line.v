@@ -130,13 +130,13 @@ jtframe_dual_ram #(.DW(16),.AW(HW+1)) u_linein(
     // Write to SDRAM and delete
     .clk0   ( clk           ),
     .data0  ( LFBUF_CLR     ),
-    .addr0  ( { line^fb_clr, fb_addr } ),
+    .addr0  ( { line, fb_addr } ),
     .we0    ( fb_clr        ),
     .q0     ( fb_din        ),
     // Get new pixels from core
     .clk1   ( clk           ),
     .data1  ( { {16-DW{1'b0}}, ln_data } ),
-    .addr1  ( { line, ln_addr } ),
+    .addr1  ( {~line, ln_addr } ),
     .we1    ( ln_we         ), // the core should not send transparent pixels
     .q1     (               )
 );

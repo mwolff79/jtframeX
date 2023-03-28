@@ -149,19 +149,21 @@ always @( posedge clk, posedge rst ) begin
                 ddram_we <= 0;
                 ddram_rd <= 0;
                 scr_we   <= 0;
-                if( !lvbl ) wr_ok <= do_wr & fb_clr;
+                if( !lvbl ) wr_ok <= do_wr;
                 if( lhbl_l & ~lhbl & lvbl ) begin
                     act_addr <= { ~frame, vrender, {HW{1'd0}}  };
                     ddram_rd <= 1;
                     rd_addr  <= 0;
                     scr_we   <= 1;
                     st       <= READ;
-                end else if( wr_ok ) begin // do not start too late so it doesn't run over H blanking
+                end else if( wr_ok & fb_clr) begin // do not start too late so it doesn't run over H blanking
                     fb_addr  <= 0;
                     act_addr <= {  frame, ln_v, {HW{1'd0}}  };
                     ddram_we <= 1;
                     do_wr    <= 0;
                     wr_ok    <= 0;
+                    line     <= ~line;
+                    fb_done  <= 1;
                     st       <= WRITE;
                 end
             end
@@ -185,8 +187,6 @@ always @( posedge clk, posedge rst ) begin
                 fb_addr <= fb_addr +1'd1;
                 if( fb_over ) begin
                     ddram_we <= 0;
-                    line     <= ~line;
-                    fb_done  <= 1;
                     fb_clr   <= 1;
                     st       <= IDLE;
                 end
