@@ -151,7 +151,7 @@ always @( posedge clk, posedge rst ) begin
                 ddram_we <= 0;
                 ddram_rd <= 0;
                 scr_we   <= 0;
-                if( !lvbl ) wr_ok <= do_wr & fb_clr;
+                wr_ok    <= do_wr & ~fb_clr;
                 if( do_rd ) begin
                     act_addr <= { ~frame, vrender, {HW{1'd0}}  };
                     ddram_rd <= 1;
@@ -176,7 +176,6 @@ always @( posedge clk, posedge rst ) begin
                     rd_addr <= nx_rd_addr;
                     if( &rd_addr ) begin
                         st    <= IDLE;
-                        wr_ok <= do_wr;
                     end else if( &rd_addr[6:0] ) begin
                         act_addr[HW-1:0] <= nx_rd_addr;
                         ddram_rd <= 1;
