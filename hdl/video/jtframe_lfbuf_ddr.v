@@ -70,6 +70,7 @@ jtframe_lfbuf_ddr_ctrl #(.HW(HW),.VW(VW)) u_ctrl (
     .pxl_cen    ( pxl_cen   ),
 
     .lhbl       ( lhbl      ),
+    .lvbl       ( lvbl      ),
     .vs         ( vs        ),
     .ln_done    ( ln_done   ),
     .vrender    ( vrender   ),

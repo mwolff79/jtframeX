@@ -26,6 +26,7 @@ module jtframe_lfbuf_ddr_ctrl #(parameter
     input               pxl_cen,
 
     input               lhbl,
+    input               lvbl,
     input               ln_done,
     input      [VW-1:0] vrender,
     input      [VW-1:0] ln_v,
@@ -63,7 +64,7 @@ module jtframe_lfbuf_ddr_ctrl #(parameter
 localparam AW=HW+VW+1;
 localparam [1:0] IDLE=0, READ=1, WRITE=2;
 
-reg           vsl, lhbl_l, ln_done_l, do_wr;
+reg           vsl, lhbl_l, ln_done_l, do_wr, wr_ok;
 reg  [   1:0] st;
 reg  [AW-1:0] act_addr;
 wire [HW-1:0] nx_rd_addr;
@@ -129,6 +130,7 @@ always @( posedge clk, posedge rst ) begin
         scr_we   <= 0;
         ln_done_l<= 0;
         do_wr    <= 0;
+        wr_ok    <= 0;
         st       <= IDLE;
     end else begin
         fb_done <= 0;
@@ -153,12 +155,12 @@ always @( posedge clk, posedge rst ) begin
                     rd_addr  <= 0;
                     scr_we   <= 1;
                     st       <= READ;
-                end else if( do_wr && !fb_clr &&
-                    hcnt<hlim && lhbl ) begin // do not start too late so it doesn't run over H blanking
+                end else if( wr_ok ) begin // do not start too late so it doesn't run over H blanking
                     fb_addr  <= 0;
                     act_addr <= {  frame, ln_v, {HW{1'd0}}  };
                     ddram_we <= 1;
                     do_wr    <= 0;
+                    wr_ok    <= 0;
                     st       <= WRITE;
                 end
             end
@@ -167,7 +169,8 @@ always @( posedge clk, posedge rst ) begin
                 if( ddram_dout_ready ) begin
                     rd_addr <= nx_rd_addr;
                     if( &rd_addr ) begin
-                        st <= IDLE;
+                        st    <= IDLE;
+                        wr_ok <= do_wr;
                     end else if( &rd_addr[6:0] ) begin
                         act_addr[HW-1:0] <= nx_rd_addr;
                         ddram_rd <= 1;
