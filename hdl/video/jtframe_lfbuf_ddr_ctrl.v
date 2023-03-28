@@ -64,7 +64,7 @@ module jtframe_lfbuf_ddr_ctrl #(parameter
 localparam AW=HW+VW+1;
 localparam [1:0] IDLE=0, READ=1, WRITE=2;
 
-reg           vsl, lhbl_l, ln_done_l, do_wr, wr_ok;
+reg           vsl, lhbl_l, ln_done_l, do_wr, do_rd, wr_ok;
 reg  [   1:0] st;
 reg  [AW-1:0] act_addr;
 wire [HW-1:0] nx_rd_addr;
@@ -130,12 +130,14 @@ always @( posedge clk, posedge rst ) begin
         scr_we   <= 0;
         ln_done_l<= 0;
         do_wr    <= 0;
+        do_rd    <= 0;
         wr_ok    <= 0;
         st       <= IDLE;
     end else begin
         fb_done <= 0;
         ln_done_l <= ln_done;
         if (ln_done && !ln_done_l ) do_wr <= 1;
+        if( lhbl_l & ~lhbl & lvbl ) do_rd <= 1;
         if( fb_clr ) begin
             // the line is cleared outside the state machine so a
             // read operation can happen independently
@@ -149,14 +151,15 @@ always @( posedge clk, posedge rst ) begin
                 ddram_we <= 0;
                 ddram_rd <= 0;
                 scr_we   <= 0;
-                if( !lvbl ) wr_ok <= do_wr;
-                if( lhbl_l & ~lhbl & lvbl ) begin
+                if( !lvbl ) wr_ok <= do_wr & fb_clr;
+                if( do_rd ) begin
                     act_addr <= { ~frame, vrender, {HW{1'd0}}  };
                     ddram_rd <= 1;
                     rd_addr  <= 0;
+                    do_rd    <= 0;
                     scr_we   <= 1;
                     st       <= READ;
-                end else if( wr_ok & fb_clr) begin // do not start too late so it doesn't run over H blanking
+                end else if( wr_ok ) begin // do not start too late so it doesn't run over H blanking
                     fb_addr  <= 0;
                     act_addr <= {  frame, ln_v, {HW{1'd0}}  };
                     ddram_we <= 1;
