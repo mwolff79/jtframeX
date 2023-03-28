@@ -150,11 +150,15 @@ always @( posedge clk, posedge rst ) begin
                 ddram_rd <= 0;
                 scr_we   <= 0;
                 if( lhbl_l & ~lhbl ) begin
-                    act_addr <= { ~frame, vrender, {HW{1'd0}}  };
-                    ddram_rd <= 1;
-                    rd_addr  <= 0;
-                    scr_we   <= 1;
-                    st       <= READ;
+                    if( !lvbl ) begin
+                        wr_ok <= do_wr;
+                    end else begin
+                        act_addr <= { ~frame, vrender, {HW{1'd0}}  };
+                        ddram_rd <= 1;
+                        rd_addr  <= 0;
+                        scr_we   <= 1;
+                        st       <= READ;
+                    end
                 end else if( wr_ok ) begin // do not start too late so it doesn't run over H blanking
                     fb_addr  <= 0;
                     act_addr <= {  frame, ln_v, {HW{1'd0}}  };
