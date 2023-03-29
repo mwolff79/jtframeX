@@ -49,25 +49,30 @@ module jtframe_lfbuf_line #(parameter
 
     // data written to external memory
     output reg          frame,
-    input      [HW-1:0] fb_addr,
-    input      [HW-1:0] rd_addr,
-    output     [  15:0] fb_din,
+    input      [HW-1:1] fb_addr,
+    input      [HW-1:1] rd_addr,
+    output     [  31:0] fb_din,
     input               fb_clr,
     input               fb_done,
 
     // data read from external memory to screen buffer
     // during h blank
-    input      [  15:0] fb_dout,
+    input      [  31:0] fb_dout,
     input               line,
     input               scr_we
 );
 
 reg           vsl, lvbl_l, done;
 reg  [VW-1:0] vstart=0, vend=0;
-wire [  15:0] scr_pxl;
+wire [  15:0] scr_pxl0, scr_pxl1;
 reg  [   1:0] vrdy;
+wire          ln_we0, ln_we1;
 
-always @(posedge clk) if(pxl_cen) ln_pxl <= scr_pxl[DW-1:0];
+assign ln_we0 = ln_we & ~ln_addr[0];
+assign ln_we1 = ln_we &  ln_addr[0];
+
+always @(posedge clk) if(pxl_cen)
+    ln_pxl <= hdump[0] ? scr_pxl1[DW-1:0] : scr_pxl0[DW-1:0];
 
 `ifdef SIMULATION
 initial begin
@@ -126,30 +131,56 @@ end
 localparam [15:0] LFBUF_CLR = `ifndef JTFRAME_LFBUF_CLR 0 `else `JTFRAME_LFBUF_CLR `endif ;
 
 // collect input data
-jtframe_dual_ram #(.DW(16),.AW(HW+1)) u_linein(
+jtframe_dual_ram #(.DW(16),.AW(HW)) u_linein0(
     // Write to SDRAM and delete
     .clk0   ( clk           ),
     .data0  ( LFBUF_CLR     ),
     .addr0  ( { line, fb_addr } ),
     .we0    ( fb_clr        ),
-    .q0     ( fb_din        ),
+    .q0     ( fb_din[15:0]  ),
     // Get new pixels from core
     .clk1   ( clk           ),
     .data1  ( { {16-DW{1'b0}}, ln_data } ),
-    .addr1  ( {~line, ln_addr } ),
-    .we1    ( ln_we         ), // the core should not send transparent pixels
+    .addr1  ( {~line, ln_addr[HW-1:1] } ),
+    .we1    ( ln_we0        ), // the core should not send transparent pixels
     .q1     (               )
 );
 
-jtframe_rpwp_ram #(.DW(16),.AW(HW)) u_lineout(
+jtframe_dual_ram #(.DW(16),.AW(HW)) u_linein1(
+    // Write to SDRAM and delete
+    .clk0   ( clk           ),
+    .data0  ( LFBUF_CLR     ),
+    .addr0  ( { line, fb_addr } ),
+    .we0    ( fb_clr        ),
+    .q0     ( fb_din[31:16] ),
+    // Get new pixels from core
+    .clk1   ( clk           ),
+    .data1  ( { {16-DW{1'b0}}, ln_data } ),
+    .addr1  ( {~line, ln_addr[HW-1:1] } ),
+    .we1    ( ln_we1        ), // the core should not send transparent pixels
+    .q1     (               )
+);
+
+jtframe_rpwp_ram #(.DW(16),.AW(HW-1)) u_lineout0(
     .clk    ( clk           ),
     // Read from SDRAM, write to line buffer
-    .din    ( fb_dout       ),
+    .din    ( fb_dout[15:0] ),
     .wr_addr( rd_addr       ),
     .we     ( scr_we        ),
     // Read from line buffer to screen
-    .rd_addr( hdump         ),
-    .dout   ( scr_pxl       )
+    .rd_addr( hdump[HW-1:1] ),
+    .dout   ( scr_pxl0      )
+);
+
+jtframe_rpwp_ram #(.DW(16),.AW(HW-1)) u_lineout1(
+    .clk    ( clk           ),
+    // Read from SDRAM, write to line buffer
+    .din    ( fb_dout[31:16]),
+    .wr_addr( rd_addr       ),
+    .we     ( scr_we        ),
+    // Read from line buffer to screen
+    .rd_addr( hdump[HW-1:1] ),
+    .dout   ( scr_pxl1      )
 );
 
 endmodule

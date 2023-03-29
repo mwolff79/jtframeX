@@ -61,8 +61,8 @@ module jtframe_lfbuf_ddr #(parameter
 );
 
 wire          frame, fb_clr, fb_done, line, scr_we;
-wire [HW-1:0] fb_addr, rd_addr;
-wire [  15:0] fb_din, fb_dout;
+wire [HW-1:1] fb_addr, rd_addr;
+wire [  31:0] fb_din, fb_dout;
 
 jtframe_lfbuf_ddr_ctrl #(.HW(HW),.VW(VW)) u_ctrl (
     .rst        ( rst       ),

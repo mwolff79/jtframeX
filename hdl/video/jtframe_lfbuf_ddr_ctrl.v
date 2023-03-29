@@ -33,15 +33,15 @@ module jtframe_lfbuf_ddr_ctrl #(parameter
     input               vs,
     // data written to external memory
     input               frame,
-    output reg [HW-1:0] fb_addr,
-    input      [  15:0] fb_din,
+    output reg [HW-1:1] fb_addr,
+    input      [  31:0] fb_din,
     output reg          fb_clr,
     output reg          fb_done,
 
     // data read from external memory to screen buffer
     // during h blank
-    output     [  15:0] fb_dout,
-    output reg [HW-1:0] rd_addr,
+    output     [  31:0] fb_dout,
+    output reg [HW-1:1] rd_addr,
     output reg          line,
     output reg          scr_we,
 
@@ -64,57 +64,35 @@ module jtframe_lfbuf_ddr_ctrl #(parameter
 localparam AW=HW+VW+1;
 localparam [1:0] IDLE=0, READ=1, WRITE=2;
 
-reg           vsl, lhbl_l, ln_done_l, do_wr, do_rd, wr_ok;
+reg           lhbl_l, ln_done_l, do_wr, do_rd, wr_ok;
 reg  [   1:0] st;
 reg  [AW-1:0] act_addr;
-wire [HW-1:0] nx_rd_addr;
-reg  [HW-1:0] hblen, hlim, hcnt;
+wire [HW-1:1] nx_rd_addr;
 wire          fb_over;
 
 assign fb_over    = &fb_addr;
 assign ddram_clk  = clk;
 assign ddram_burstcnt = 8'h80;
 assign ddram_addr = { 4'd3, {29-4-AW{1'd0}}, act_addr };
-assign ddram_din  = { 48'd0, fb_din };
-assign ddram_be   = 3;
+assign ddram_din  = { 32'd0, fb_din };
+assign ddram_be   = 15;
 assign nx_rd_addr = rd_addr + 1'd1;
-assign fb_dout    = ddram_dout[15:0];
+assign fb_dout    = ddram_dout[31:0];
 
 always @(posedge clk) begin
     case( st_addr[3:0] )
         0: st_dout <= { 2'd0, ddram_we, ddram_rd, 2'd0, st };
         1: st_dout <= { 3'd0, frame, fb_done, ddram_dout_ready, ddram_busy, line };
-        2: st_dout <= fb_din[7:0];
-        3: st_dout <= fb_din[15:8];
-        4: st_dout <= ddram_din[7:0];
-        5: st_dout <= ddram_din[15:8];
-        6: st_dout <= ddram_dout[7:0];
-        7: st_dout <= ddram_dout[15:8];
+        // 2: st_dout <= fb_din[7:0];
+        // 3: st_dout <= fb_din[15:8];
+        // 4: st_dout <= ddram_din[7:0];
+        // 5: st_dout <= ddram_din[15:8];
+        // 6: st_dout <= ddram_dout[7:0];
+        // 7: st_dout <= ddram_dout[15:8];
         8: st_dout <= ln_v[7:0];
         9: st_dout <= vrender[7:0];
         default: st_dout <= 0;
     endcase
-end
-
-always @( posedge clk, posedge rst ) begin
-    if( rst ) begin
-        hblen  <= 0;
-        hlim   <= 0;
-        hcnt   <= 0;
-        lhbl_l <= 0;
-        vsl    <= 0;
-    end else if(pxl_cen) begin
-        lhbl_l  <= lhbl;
-        vsl     <= vs;
-        hcnt    <= hcnt+1'd1;
-        if( ~lhbl & lhbl_l ) begin // enters blanking
-            hcnt   <= 0;
-            hlim   <= hcnt - hblen; // H limit below which we allow do_wr events
-        end
-        if( lhbl & ~lhbl_l ) begin // leaves blanking
-            hblen <= hcnt;
-        end
-    end
 end
 
 always @( posedge clk, posedge rst ) begin
@@ -134,10 +112,12 @@ always @( posedge clk, posedge rst ) begin
         wr_ok    <= 0;
         st       <= IDLE;
     end else begin
-        fb_done <= 0;
+        fb_done   <= 0;
+        lhbl_l    <= lhbl;
         ln_done_l <= ln_done;
         if (ln_done && !ln_done_l ) do_wr <= 1;
         if( lhbl_l & ~lhbl & lvbl ) do_rd <= 1;
+        // if( !lvbl ) wr_ok <= do_wr & ~fb_clr;
         if( fb_clr ) begin
             // the line is cleared outside the state machine so a
             // read operation can happen independently
@@ -152,6 +132,7 @@ always @( posedge clk, posedge rst ) begin
                 ddram_rd <= 0;
                 scr_we   <= 0;
                 wr_ok    <= do_wr & ~fb_clr;
+                // if( !lvbl ) wr_ok <= do_wr & ~fb_clr;
                 if( do_rd ) begin
                     act_addr <= { ~frame, vrender, {HW{1'd0}}  };
                     ddram_rd <= 1;
@@ -176,15 +157,16 @@ always @( posedge clk, posedge rst ) begin
                     rd_addr <= nx_rd_addr;
                     if( &rd_addr ) begin
                         st    <= IDLE;
-                    end else if( &rd_addr[6:0] ) begin
-                        act_addr[HW-1:0] <= nx_rd_addr;
+                        // wr_ok <= do_wr & ~fb_clr;
+                    end else if( &rd_addr[7:1] ) begin
+                        act_addr[HW-2:0] <= nx_rd_addr;
                         ddram_rd <= 1;
                     end
                 end
             end
             WRITE: if(!ddram_busy) begin
-                if( &fb_addr[6:0] ) begin
-                    act_addr[HW-1:7] <= act_addr[HW-1:7]+1'd1;
+                if( &fb_addr[7:1] ) begin
+                    act_addr[HW-2:7] <= act_addr[HW-2:7]+1'd1;
                 end
                 fb_addr <= fb_addr +1'd1;
                 if( fb_over ) begin
