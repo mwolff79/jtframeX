@@ -117,7 +117,6 @@ always @( posedge clk, posedge rst ) begin
         ln_done_l <= ln_done;
         if (ln_done && !ln_done_l ) do_wr <= 1;
         if( lhbl_l & ~lhbl & lvbl ) do_rd <= 1;
-        // if( !lvbl ) wr_ok <= do_wr & ~fb_clr;
         if( fb_clr ) begin
             // the line is cleared outside the state machine so a
             // read operation can happen independently
@@ -131,8 +130,7 @@ always @( posedge clk, posedge rst ) begin
                 ddram_we <= 0;
                 ddram_rd <= 0;
                 scr_we   <= 0;
-                wr_ok    <= do_wr & ~fb_clr;
-                // if( !lvbl ) wr_ok <= do_wr & ~fb_clr;
+                if( !lvbl ) wr_ok <= do_wr & ~fb_clr;
                 if( do_rd ) begin
                     act_addr <= { ~frame, vrender, {HW{1'd0}}  };
                     ddram_rd <= 1;
@@ -157,7 +155,7 @@ always @( posedge clk, posedge rst ) begin
                     rd_addr <= nx_rd_addr;
                     if( &rd_addr ) begin
                         st    <= IDLE;
-                        // wr_ok <= do_wr & ~fb_clr;
+                        wr_ok <= do_wr & ~fb_clr;
                     end else if( &rd_addr[7:1] ) begin
                         act_addr[HW-2:0] <= nx_rd_addr;
                         ddram_rd <= 1;
