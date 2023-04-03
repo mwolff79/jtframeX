@@ -17,6 +17,7 @@ M68000      |  5171        |    6  |  fx68k
 i8751       |  4019        |    5  |  jtframe_8751mcu
 M6809       |  2992        |    0  |  mc6809i
 Z80         |  2476        |    2  |  jtframe_sysz80 (T80s)
+Konami CPU  |  2290        |    2  |  JTKCPU
 6502        |   832        |    0  |  T65 (VHDL)
 6502        |   937        |    0  |  chip_6502 (Andrew Holme)
 PicoBlaze   |   950        |    0  |  PauloBlaze

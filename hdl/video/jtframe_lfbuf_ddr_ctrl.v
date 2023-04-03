@@ -61,7 +61,7 @@ module jtframe_lfbuf_ddr_ctrl #(parameter
     output reg  [7:0]   st_dout
 );
 
-localparam AW=HW+VW+1;
+localparam AW=HW+VW;
 localparam [1:0] IDLE=0, READ=1, WRITE=2;
 
 reg           lhbl_l, ln_done_l, do_wr, do_rd, wr_ok;
@@ -132,7 +132,7 @@ always @( posedge clk, posedge rst ) begin
                 scr_we   <= 0;
                 if( !lvbl ) wr_ok <= do_wr & ~fb_clr;
                 if( do_rd ) begin
-                    act_addr <= { ~frame, vrender, {HW{1'd0}}  };
+                    act_addr <= { ~frame, vrender, {HW-1{1'd0}}  };
                     ddram_rd <= 1;
                     rd_addr  <= 0;
                     do_rd    <= 0;
@@ -140,7 +140,7 @@ always @( posedge clk, posedge rst ) begin
                     st       <= READ;
                 end else if( wr_ok ) begin // do not start too late so it doesn't run over H blanking
                     fb_addr  <= 0;
-                    act_addr <= {  frame, ln_v, {HW{1'd0}}  };
+                    act_addr <= {  frame, ln_v, {HW-1{1'd0}}  };
                     ddram_we <= 1;
                     do_wr    <= 0;
                     wr_ok    <= 0;
